@@ -1,6 +1,6 @@
 defmodule Exaggerate.Codesynth do
 
-  @project_root Path.relative_to_cwd("../../../../") |> Path.expand
+  @project_root Path.relative_to_cwd("../../") |> Path.expand
 
   def swaggerfile_exists?(""), do: false
   def swaggerfile_exists?(filename), do: @project_root |> Path.join(filename) |> File.exists?
