@@ -5,7 +5,7 @@ defmodule Mix.Tasks.Swagger do
 
   @shortdoc "generates an api from the Exaggerate task"
   def run(swaggerfile) do
-    Exaggerate.Codesynth.build_fromfile(swaggerfile)
+    swaggerfile |> Enum.map(&Exaggerate.Codesynth.build_fromfile/1)
   end
 
 end
