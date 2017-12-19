@@ -1,21 +1,20 @@
 # Exaggerate
 
-**TODO: Add description**
+** A OpenAPI (swagger) -> Plug code generator for Elixir **
+
+
+Currently only supports JSON OpenAPI specs.
 
 ## Installation
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `Exaggerate` to your list of dependencies in `mix.exs`:
+This library requires Elixir 1.6 (because of code prettification)
 
-```elixir
-def deps do
-  [
-    {:Exaggerate, "~> 0.1.0"}
-  ]
-end
+## Running
+
+```bash
+  mix swagger <swaggerfile>
 ```
 
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at [https://hexdocs.pm/Exaggerate](https://hexdocs.pm/Exaggerate).
-
+The swaggerfile should be in the root directory.  Creates two files, `routes.ex`
+and `endpoints.ex`, which are in `$ROOT/lib/$MODULE` where module is generated
+from the swaggerfile prefix.
