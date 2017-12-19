@@ -60,7 +60,7 @@ defmodule Exaggerate.Codesynth do
       #
 
       defmodule #{modulename}.Routes do
-        use Plug.Routes
+        use Plug.Router
         use Exaggerate.RouteFunctions
 
         #{optional_plugs}
