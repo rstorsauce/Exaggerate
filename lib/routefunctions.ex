@@ -1,4 +1,4 @@
-defmodule Exaggerate.Routefunctions.Helpers do
+defmodule Exaggerate.RouteFunctions.Helpers do
 
   #TODO: implement schema checking methods in the route_options macro.
   defmacro route_options(functions) do
@@ -13,9 +13,9 @@ defmodule Exaggerate.Routefunctions.Helpers do
   end
 end
 
-defmodule Exaggerate.Routefunctions do
+defmodule Exaggerate.RouteFunctions do
 
-  import Exaggerate.Routefunctions.Helpers
+  import Exaggerate.RouteFunctions.Helpers
   import Plug.Conn, only: [update_resp_header: 4, send_resp: 3, send_file: 3, get_req_header: 2]
 
   route_options [:body_parameter, :query_parameter, :cookie_parameter, :formData_parameter]

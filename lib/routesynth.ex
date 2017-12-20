@@ -162,7 +162,7 @@ defmodule Exaggerate.Codesynth.Routesynth do
     def get_checked_param_fetch(arr) when is_list(arr) do
       arr |> Enum.map(&Exaggerate.Codesynth.Routesynth.get_checked_param_fetch/1)
           |> Enum.filter(& &1)
-          |> Enum.join("\n")
+          |> Enum.join(",\n")
     end
 
     def get_basic_param_fetch(%{"required" => true}), do: nil  #also filters out path parameters
@@ -207,7 +207,7 @@ defmodule Exaggerate.Codesynth.Routesynth do
         #{summary}
         #{checked_params}
         #{basic_params}
-        cond #{routemodule}.#{operation}(conn#{params_list}) do
+        case #{routemodule}.#{operation}(conn#{params_list}) do
           #{alt_codes}
           #{error_codes}
           #{default_code}
