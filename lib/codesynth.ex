@@ -61,7 +61,7 @@ defmodule Exaggerate.Codesynth do
 
       defmodule #{modulename}.Routes do
         use Plug.Router
-        include Exaggerate.RouteFunctions
+        import Exaggerate.RouteFunctions
 
         #{optional_plugs}
 
