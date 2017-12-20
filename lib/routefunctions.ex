@@ -9,11 +9,14 @@ defmodule Exaggerate.Routefunctions.Helpers do
           if res, do: {:ok, res}, else: {:error, 422, "required parameter #{param_name} is missing"}
         end
       end
-    end
+    end)
   end
 end
 
 defmodule Exaggerate.Routefunctions do
+
+  import Exaggerate.Routefunctions.Helpers
+  import Plug.Conn, only: [update_resp_header: 4, send_resp: 3, send_file: 3, get_req_header: 2]
 
   route_options [:body_parameter, :query_parameter, :cookie_parameter, :formData_parameter]
 
@@ -43,25 +46,78 @@ defmodule Exaggerate.Routefunctions do
   end
   def send_formatted(conn, code, filemap = %{:file => filename}), do: send_file(conn, code, filename)
 
-  @JSONEncoder Application.get_env(:json_encoder)
-  @HTMLEncoder Application.get_env(:html_encoder)
+  @doc """
+    turns a content-type string into a list of mimetypes.
+
+    iex> Exaggerate.Routefunctions.process_response_string("text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8") #==>
+    ["text/html","application/xhtml+xml","application/xml","*/*"]
+  """
+
+  def process_response_string(s) when is_binary(s) do
+    s |> String.split(",")
+      |> Enum.map(fn x -> x |> String.split(";") |> Enum.at(0) end)
+  end
+
+  @doc """
+    assigns the desired response string based on a content-type string list.
+    JSON and XML responses are prioritized,  followed by html, */* is lowest-priority.
+
+    iex> Exaggerate.Routefunctions.match_response_string(["*/*", "application/json"]) #==>
+    {:json, "application/json"}
+
+    iex> Exaggerate.Routefunctions.match_response_string(["text/html", "text/xml"]) #==>
+    {:xml, "text/xml"}
+
+    iex> Exaggerate.Routefunctions.match_response_string(["text/unkown"]) #==>
+    {:error, "no matching mimetype"}
+  """
+
+  def match_response_string(arr), do: match_response_string(arr, nil)
+  #JSON or XML responses get prioritized.
+  def match_response_string(["application/json" | _tail], _), do: {:json, "application/json"}
+  def match_response_string(["text/xml" | _tail], _), do: {:xml, "text/xml"}
+
+  #text/html beats vague statuses (but not json or xml)
+  def match_response_string(["text/html" | tail], _), do: match_response_string(tail, "text/html")
+
+  def match_response_string(["text/plain" | tail], best), do: match_response_string(tail, best || "text/plain")
+  def match_response_string(["application/xhtml+xml" | tail], best), do: match_response_string(tail, best || "application/xhtml+xml")
+  def match_response_string(["*/*" | tail], best), do: match_response_string(tail, best || "*/*")
+
+  #unrecognized response types pass on "best"
+  def match_response_string([_ | tail], best), do: match_response_string(tail, best)
+  def match_response_string([], "*/*"), do: {:json, "application/json"}
+  def match_response_string([], "text/plain"), do: {:text, "text/plain"}
+  def match_response_string([], "text/html"), do: {:html, "text/html"}
+  def match_response_string([], nil), do: {:error, "no matching mimetype"}
+
+  def response_type(conn) do
+    conn |> get_req_header("accept")
+      |> process_response_string
+      |> match_response_string
+  end
+
+  @json_encoder Application.get_env(:Exaggerate, :json_encoder)
+  @html_encoder Application.get_env(:Exaggerate, :html_encoder)
 
   def send_formatted(conn, code, map) when is_map(map) do
-    {encoded_res, mimetype} = case response_type(conn) do
+    {new_code, encoded_res, mimetype} = case response_type(conn) do
       #:xml ->  {XMLEncoder.encode!(map),  }
-      {:json, mimetype} -> {@JSONEncoder.encode!(map), mimetype}
-      {:text, mimetype} -> {@JSONEncoder.encode!(map), mimetype}
-      {:html, mimetype} -> {@HTMLEncoder.encode!(map), mimetype}
+      {:json, mimetype}  -> {code, @json_encoder.encode!(map), mimetype}
+      {:text, mimetype}  -> {code, @json_encoder.encode!(map), mimetype}
+      {:html, mimetype}  -> {code, @html_encoder.encode!(map), mimetype}
+      {:error, errormsg} -> {415, errormsg, "text/html"}
     end
     conn |> update_resp_header("Content-Type", mimetype, fn _ -> mimetype end)
-         |> send_resp(code, encoded_res)
+         |> send_resp(new_code, encoded_res)
   end
 
   def send_formatted(conn, code, text) when is_binary(text) do
-    {encoded_res, mimetype} = case response_type(conn) do
-      {:json, mimetype} -> {@JSONEncoder.encode!(%{"text" => text}), mimetype}
-      {:text, mimetype} -> {text, mimetype}
-      {:html, mimetype} -> {@HTMLEncoder.bodyonly(text), mimetype}
+    {new_code, encoded_res, mimetype} = case response_type(conn) do
+      {:json, mimetype} -> {code, @json_encoder.encode!(%{"text" => text}), mimetype}
+      {:text, mimetype} -> {code, text, mimetype}
+      {:html, mimetype} -> {code, @html_encoder.bodyonly(text), mimetype}
+      {:error, errormsg} -> {415, errormsg, "text/html"}
     end
     conn |> update_resp_header("Content-Type", mimetype, fn _ -> mimetype end)
          |> send_resp(code, encoded_res)

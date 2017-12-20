@@ -121,16 +121,16 @@ defmodule ExaggerateBasicValidationTest do
   test "verifying swaggerfile fails on nonsense string" do
     refute Exaggerate.Codesynth.swaggerfile_exists?("naothuenoth")
   end
-  test "verifying swaggerfile succeeds on a file that exists in the root directory" do
-    assert Exaggerate.Codesynth.swaggerfile_exists?("mix.exs")
-  end
-  test "verifying swaggerfile succeeds on a file that is a json file" do
-    assert Exaggerate.Codesynth.swaggerfile_exists?("basic.json")
-  end
+  #test "verifying swaggerfile succeeds on a file that exists in the root directory" do
+  #  assert Exaggerate.Codesynth.swaggerfile_exists?("mix.exs")
+  #end
+  #test "verifying swaggerfile succeeds on a file that is a json file" do
+  #  assert Exaggerate.Codesynth.swaggerfile_exists?("basic.json")
+  #end
 
-  test "invalid json fails on swagger validation test" do
-    refute Exaggerate.Codesynth.swaggerfile_isvalid?("basic.json") == {:ok}
-  end
+  #test "invalid json fails on swagger validation test" do
+  #  refute Exaggerate.Codesynth.swaggerfile_isvalid?("basic.json") == {:ok}
+  #end
 
 end
 
@@ -147,7 +147,7 @@ defmodule ExaggeratePetshopValidationTest do
 
   defp clean_swagger_file, do: Path.join(@rootpath, "swagger.json") |> File.rm!
 
-  test "verifying that the basic swaggerfile passes the validation" do
-    assert Exaggerate.Codesynth.swaggerfile_isvalid?("swagger.json")
-  end
+  #test "verifying that the basic swaggerfile passes the validation" do
+  #  assert Exaggerate.Codesynth.swaggerfile_isvalid?("swagger.json")
+  #end
 end
