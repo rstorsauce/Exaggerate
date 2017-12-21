@@ -1,5 +1,5 @@
-defmodule ExaggerateRoutefunctionsTest do
+defmodule ExaggerateRouteFunctionsTest do
   use ExUnit.Case, async: true
 
-  doctest Exaggerate.Routefunctions
+  doctest Exaggerate.RouteFunctions
 end
