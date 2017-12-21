@@ -84,7 +84,7 @@ defmodule Exaggerate.Codesynth do
   @doc """
     retrives function definitions from a code token array.
 
-    iex> "defmodule A do\ndef a do\nend\ndef b do\nend\nend" |> Code.format_string! |> Exaggerate.Codesynth.get_defs #==>
+    iex> "defmodule A do\n  def a do\n  end\n  def b do\n  end\nend" |> Code.format_string! |> Exaggerate.Codesynth.get_defs #==>
     ["a", "b"]
   """
   def get_defs(arr), do: get_defs(arr, :no)

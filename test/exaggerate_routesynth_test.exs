@@ -51,7 +51,7 @@ defmodule ExaggerateCodesynthIntegrationTest do
       "responses" => %{"default" => "success"}},
       """
       get "/barebones" do
-        cond TestModule.barebones(conn) do
+        case TestModule.barebones(conn) do
           _ -> send_formatted(conn, 200, "success")
         end
       end
@@ -63,7 +63,7 @@ defmodule ExaggerateCodesynthIntegrationTest do
       "responses" => %{}},
       """
       get "/barebones" do
-        cond TestModule.barebones(conn) do
+        case TestModule.barebones(conn) do
           {:ok, content} -> send_formatted(conn, 200, content)
           _ -> send_resp(conn, 400, "")
         end
@@ -80,14 +80,47 @@ defmodule ExaggerateCodesynthIntegrationTest do
       "responses" => %{"404" => %{"description" => "404 error"}}},
       """
       get "/e404" do
-        cond TestModule.e404(conn) do
-          {:error, "404 error"} -> send_formatted(conn, 404, %{"404" => "404 error"})
+        case TestModule.e404(conn) do
+          {:error, 404, details} -> send_formatted(conn, 404, %{"404" => "404 error:" <> details})
           {:ok, content} -> send_formatted(conn, 200, content)
           _ -> send_resp(conn, 400, "")
         end
       end
       """,
       :get, "/e404")
+  end
+
+  test "get with basic 200 success override" do
+
+    codesynth_match(
+      %{"operationId" => "b200",
+      "responses" => %{"200" => %{"description" => "general success"}}},
+      """
+      get "/e404" do
+        case TestModule.e404(conn) do
+          {:ok, 200, details} -> send_formatted(conn, 200, %{"200" => "general success:" <> details})
+          _ -> send_resp(conn, 400, "")
+        end
+      end
+      """,
+      :get, "/e404")
+  end
+
+  test "get with basic 201 success response" do
+
+    codesynth_match(
+      %{"operationId" => "b201",
+      "responses" => %{"201" => %{"description" => "resource created"}}},
+      """
+      get "/b201" do
+        case TestModule.b201(conn) do
+          {:ok, 201, details} -> send_formatted(conn, 201, %{"201" => "resource created:" <> details})
+          {:ok, content} -> send_formatted(conn, 200, content)
+          _ -> send_resp(conn, 400, "")
+        end
+      end
+      """,
+      :get, "/b201")
   end
 
   test "get with complex 404 error response" do
@@ -98,13 +131,13 @@ defmodule ExaggerateCodesynthIntegrationTest do
                                   %{"application/json" =>
                                     %{"schema" =>
                                       %{"$ref" => "#/components/schemas/Pet"}}},
-                                  "description" => "can't find file"}}},
+                                  "description" => "can't find the file"}}},
     """
     get "/e404" do
-      cond TestModule.e404(conn) do
+      case TestModule.e404(conn) do
         # handles the can't find file error.
-        {:error, 404, content} ->
-          send_formatted(conn, 404, content)
+        {:error, 404, details} ->
+          send_formatted(conn, 404, "can't find the file:" <> details)
 
         {:ok, content} ->
           send_formatted(conn, 200, content)
@@ -128,7 +161,7 @@ defmodule ExaggerateCodesynthIntegrationTest do
       """
       get "/oneparam" do
         with {:ok, param1} <- header_parameter(conn, "param1", :required) do
-          cond TestModule.oneparam(conn, param1) do
+          case TestModule.oneparam(conn, param1) do
             _ -> send_formatted(conn, 200, "success")
           end
         else
@@ -146,7 +179,7 @@ defmodule ExaggerateCodesynthIntegrationTest do
       "responses" => %{"default" => "success"}},
       """
       get "/oneparam/:param1" do
-        cond TestModule.oneparam(conn, param1) do
+        case TestModule.oneparam(conn, param1) do
           _ -> send_formatted(conn, 200, "success")
         end
       end
@@ -162,7 +195,7 @@ defmodule ExaggerateCodesynthIntegrationTest do
       """
       get "/oneparam" do
         with {:ok, param1} <- query_parameter(conn, "param1", :required) do
-          cond TestModule.oneparam(conn, param1) do
+          case TestModule.oneparam(conn, param1) do
             _ -> send_formatted(conn, 200, "success")
           end
         else
@@ -182,7 +215,7 @@ defmodule ExaggerateCodesynthIntegrationTest do
       """
       get "/mixparam/:param1" do
         with {:ok, param2} <- query_parameter(conn, "param2", :required) do
-          cond TestModule.mixparam(conn, param1, param2) do
+          case TestModule.mixparam(conn, param1, param2) do
             _ -> send_formatted(conn, 200, "success")
           end
         else
@@ -201,10 +234,10 @@ defmodule ExaggerateCodesynthIntegrationTest do
         "responses" => %{"default" => "success"}},
       """
       get "/twoparam" do
-        with {:ok, param1} <- header_parameter(conn, "param1", :required)
+        with {:ok, param1} <- header_parameter(conn, "param1", :required),
              {:ok, param2} <- header_parameter(conn, "param2", :required)
         do
-          cond TestModule.twoparam(conn, param1, param2) do
+          case TestModule.twoparam(conn, param1, param2) do
             _ -> send_formatted(conn, 200, "success")
           end
         else
@@ -224,7 +257,7 @@ defmodule ExaggerateCodesynthIntegrationTest do
       get "/optparam" do
         param1 = header_parameter(conn, "param1")
 
-        cond TestModule.optparam(conn, %{"param1" => param1}) do
+        case TestModule.optparam(conn, %{"param1" => param1}) do
           _ -> send_formatted(conn, 200, "success")
         end
       end
@@ -243,7 +276,7 @@ defmodule ExaggerateCodesynthIntegrationTest do
       param1 = header_parameter(conn, "param1")
       param2 = header_parameter(conn, "param2")
 
-      cond TestModule.twoparam(conn, %{"param1" => param1, "param2" => param2}) do
+      case TestModule.twoparam(conn, %{"param1" => param1, "param2" => param2}) do
         _ -> send_formatted(conn, 200, "success")
       end
     end
@@ -263,7 +296,7 @@ defmodule ExaggerateCodesynthIntegrationTest do
       do
         param2 = header_parameter(conn, "param2")
 
-        cond TestModule.mixparam(conn, param1, %{"param2" => param2}) do
+        case TestModule.mixparam(conn, param1, %{"param2" => param2}) do
           _ -> send_formatted(conn, 200, "success")
         end
       else
@@ -294,7 +327,7 @@ defmodule ExaggeratePetshopCodesynthTest do
       get "/user/logout" do
         # Logs out current logged in user session
 
-        cond TestModule.logoutUser(conn) do
+        case TestModule.logoutUser(conn) do
           _ -> send_formatted(conn, 200, %{"description" => "successful operation"})
         end
       end
