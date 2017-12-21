@@ -49,7 +49,7 @@ defmodule Exaggerate.RouteFunctions do
   @doc """
     turns a content-type string into a list of mimetypes.
 
-    iex> Exaggerate.Routefunctions.process_response_string("text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8") #==>
+    iex> Exaggerate.RouteFunctions.process_response_string("text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8") #==>
     ["text/html","application/xhtml+xml","application/xml","*/*"]
   """
 
@@ -62,13 +62,13 @@ defmodule Exaggerate.RouteFunctions do
     assigns the desired response string based on a content-type string list.
     JSON and XML responses are prioritized,  followed by html, */* is lowest-priority.
 
-    iex> Exaggerate.Routefunctions.match_response_string(["*/*", "application/json"]) #==>
+    iex> Exaggerate.RouteFunctions.match_response_string(["*/*", "application/json"]) #==>
     {:json, "application/json"}
 
-    iex> Exaggerate.Routefunctions.match_response_string(["text/html", "text/xml"]) #==>
+    iex> Exaggerate.RouteFunctions.match_response_string(["text/html", "text/xml"]) #==>
     {:xml, "text/xml"}
 
-    iex> Exaggerate.Routefunctions.match_response_string(["text/unkown"]) #==>
+    iex> Exaggerate.RouteFunctions.match_response_string(["text/unkown"]) #==>
     {:error, "no matching mimetype"}
   """
 

@@ -36,7 +36,7 @@ defmodule Exaggerate.Codesynth do
            |> Enum.join("\n\n")
   end
 
-  def build_endpointmodule(swaggerfile, filename, modulename, defs_to_ignore \\ []) do
+  def build_endpointmodule(swaggerfile, _filename, modulename, defs_to_ignore \\ []) do
     endpointcode = build_endpoints(swaggerfile["paths"], modulename, defs_to_ignore)
     """
       defmodule #{modulename} do
@@ -84,14 +84,19 @@ defmodule Exaggerate.Codesynth do
   @doc """
     retrives function definitions from a code token array.
 
-    iex> "defmodule A do\n  def a do\n  end\n  def b do\n  end\nend" |> Code.format_string! |> Exaggerate.Codesynth.get_defs #==>
-    ["a", "b"]
+    iex> Exaggerate.Codesynth.get_defs(["def", "  ", "hi"]) #==>
+    ["hi"]
   """
-  def get_defs(arr), do: get_defs(arr, :no)
+  def get_defs(arr) do
+    arr |> Enum.map(&String.trim/1)
+        |> Enum.filter(fn s -> s != "" end)
+        |> get_defs(:no)
+  end
   def get_defs([], :no), do: []
-  def get_defs(["  def" | tail], :no), do: get_defs([tail], :def)
-  def get_defs([head | tail], :def), do: [String.trim(head) | get_defs(tail)]
-  def get_defs([_head | tail], :no), do: get_defs(tail)
+  def get_defs(["def" | tail], :no), do: get_defs(tail, :def)
+  def get_defs([head | tail], :def), do: [head | get_defs(tail)]
+  def get_defs([head | tail], :no), do: get_defs(tail)
+  #def get_defs([_head | tail], :no), do: get_defs(tail)
 
   def insert_code(new_functions, code_tokens) do
     new_code = Enum.slice(code_tokens, 0..-3) ++ [new_functions] ++ ["\n","end"]
