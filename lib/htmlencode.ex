@@ -1,5 +1,5 @@
-defmodule Exaggerate.HTTPEncode do
-  def encode(data) do
+defmodule Exaggerate.HTMLEncode do
+  def encode!(data) do
     data
   end
 

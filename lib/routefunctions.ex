@@ -24,27 +24,12 @@ defmodule Exaggerate.RouteFunctions do
 
   def header_parameter(conn, param_name), do: conn.request_headers[param_name]
 
-  def cookie_parameter(conn, param_name), do: throw("cookies parameters not currently supported")
+  def cookie_parameter(_conn, _param_name), do: throw("cookies parameters not currently supported")
 
   def body_parameter(conn, param_name), do: conn.body_params[param_name]
   def formData_parameter(conn, param_name),do: conn.params[param_name]
 
   ##############################################################################
-
-  @doc """
-    examines the content and sends an response of the appropriate type based on
-    the response content specifications in the request header.
-
-    several default content values:
-    send_formatted(conn, code, %{:file => filename}) -> sends a file.  you can specify the response mimetype by setting :mimetype in the map.
-    send_formatted(conn, code, map)                  -> XML, JSON, text, or text/html
-    send_formatted(conn, code, text)                 -> text (possibly detecting XML)
-  """
-  def send_formatted(conn, code, filemap = %{:file => filename, :mimetype => mimetype}) do
-    conn |> update_resp_header("Content-Type", mimetype, fn _ -> mimetype end)
-         |> send_file(code, filemap)
-  end
-  def send_formatted(conn, code, filemap = %{:file => filename}), do: send_file(conn, code, filename)
 
   @doc """
     turns a content-type string into a list of mimetypes.
@@ -100,6 +85,22 @@ defmodule Exaggerate.RouteFunctions do
   @json_encoder Application.get_env(:Exaggerate, :json_encoder)
   @html_encoder Application.get_env(:Exaggerate, :html_encoder)
 
+
+  @doc """
+    examines the content and sends an response of the appropriate type based on
+    the response content specifications in the request header.
+
+    several default content values:
+    send_formatted(conn, code, %{:file => filename}) -> sends a file.  you can specify the response mimetype by setting :mimetype in the map.
+    send_formatted(conn, code, map)                  -> XML, JSON, text, or text/html
+    send_formatted(conn, code, text)                 -> text (possibly detecting XML)
+  """
+  def send_formatted(conn, code, %{:file => filename, :mimetype => mimetype}) do
+    conn |> update_resp_header("Content-Type", mimetype, fn _ -> mimetype end)
+         |> send_file(code, filename)
+  end
+  def send_formatted(conn, code, %{:file => filename}), do: send_file(conn, code, filename)
+
   def send_formatted(conn, code, map) when is_map(map) do
     {new_code, encoded_res, mimetype} = case response_type(conn) do
       #:xml ->  {XMLEncoder.encode!(map),  }
@@ -120,7 +121,7 @@ defmodule Exaggerate.RouteFunctions do
       {:error, errormsg} -> {415, errormsg, "text/html"}
     end
     conn |> update_resp_header("Content-Type", mimetype, fn _ -> mimetype end)
-         |> send_resp(code, encoded_res)
+         |> send_resp(new_code, encoded_res)
   end
 
 end

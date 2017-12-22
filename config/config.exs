@@ -9,4 +9,4 @@ use Mix.Config
 # 3rd-party users, it should be done in your "mix.exs" file.
 
 config :Exaggerate, json_encoder: Poison
-config :Exaggerate, http_encoder: Exaggerate.HTTPEncode
+config :Exaggerate, html_encoder: Exaggerate.HTMLEncode

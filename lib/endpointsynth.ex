@@ -1,4 +1,28 @@
 defmodule Exaggerate.Codesynth.Endpointsynth do
+  @doc """
+    master function which builds the textual material inside an endpoint file
+  """
+  def build_endpointmodule(swaggerfile, _filename, modulename, defs_to_ignore \\ []) do
+    endpointcode = build_endpoints(swaggerfile["paths"], modulename, defs_to_ignore)
+    """
+      defmodule #{modulename} do
+        #{endpointcode}
+      end
+    """ |> Code.format_string! |> Enum.join
+  end
+
+  def build_endpoints(routelist, modulename, defs_to_ignore) when is_map(routelist) do
+    routelist |> Map.keys
+      |> Enum.filter(fn x -> !(x in defs_to_ignore) end)
+      |> Enum.map(fn route ->
+        routelist[route] |> Map.keys
+          |> Enum.map(fn verb ->
+            verb |> String.to_atom
+                 |> Exaggerate.Codesynth.Endpointsynth.build_endpoint(route, routelist[route][verb], modulename)
+          end)
+      end) |> List.flatten
+           |> Enum.join("\n\n")
+  end
 
   def optional_param?(%{"required" => true}), do: false
   def optional_param?(%{}), do: true

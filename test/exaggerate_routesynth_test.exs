@@ -81,7 +81,8 @@ defmodule ExaggerateCodesynthIntegrationTest do
       """
       get "/e404" do
         case TestModule.e404(conn) do
-          {:error, 404, details} -> send_formatted(conn, 404, %{"404" => "404 error:" <> details})
+          # handles 404 error.
+          {:error, 404, details} -> send_formatted(conn, 404, %{"404" => "404 error: " <> details})
           {:ok, content} -> send_formatted(conn, 200, content)
           _ -> send_resp(conn, 400, "")
         end
@@ -96,14 +97,16 @@ defmodule ExaggerateCodesynthIntegrationTest do
       %{"operationId" => "b200",
       "responses" => %{"200" => %{"description" => "general success"}}},
       """
-      get "/e404" do
-        case TestModule.e404(conn) do
-          {:ok, 200, details} -> send_formatted(conn, 200, %{"200" => "general success:" <> details})
+      get "/b200" do
+        case TestModule.b200(conn) do
+          # handles general success.
+          {:ok, 200, details} -> send_formatted(conn, 200, %{"200" => "general success: " <> details})
+          {:ok, content} -> send_formatted(conn, 200, content)
           _ -> send_resp(conn, 400, "")
         end
       end
       """,
-      :get, "/e404")
+      :get, "/b200")
   end
 
   test "get with basic 201 success response" do
@@ -114,7 +117,8 @@ defmodule ExaggerateCodesynthIntegrationTest do
       """
       get "/b201" do
         case TestModule.b201(conn) do
-          {:ok, 201, details} -> send_formatted(conn, 201, %{"201" => "resource created:" <> details})
+          # handles resource created.
+          {:ok, 201, details} -> send_formatted(conn, 201, %{"201" => "resource created: " <> details})
           {:ok, content} -> send_formatted(conn, 200, content)
           _ -> send_resp(conn, 400, "")
         end
@@ -135,9 +139,9 @@ defmodule ExaggerateCodesynthIntegrationTest do
     """
     get "/e404" do
       case TestModule.e404(conn) do
-        # handles the can't find file error.
+        # handles can't find the file.
         {:error, 404, details} ->
-          send_formatted(conn, 404, "can't find the file:" <> details)
+          send_formatted(conn, 404, %{"404" => "can't find the file: " <> details})
 
         {:ok, content} ->
           send_formatted(conn, 200, content)
