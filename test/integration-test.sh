@@ -43,6 +43,16 @@ rm ./lib/test/test.ex
 cp "$resource_dir/master_endpoints" ./lib/test/test.ex
 
 mix compile
+
+#check if a previous version is already running
+
+if [ -f /tmp/ex_pid ]; then
+  pid=`cat /tmp/ex_pid`
+  kill -KILL "$pid"
+  rm -f /tmp/ex_pid
+fi
+
+
 mix run --no-halt &
 echo $! > /tmp/ex_pid
 
