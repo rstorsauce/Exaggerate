@@ -1,0 +1,31 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "api",
+    "version": "0.1.0"
+  },
+  "consumes": [
+    "application/json"
+  ],
+  "basePath": "/",
+  "produces": [
+    "application/json"
+  ],
+  "schemes": [
+    "http"
+  ],
+  "paths": {
+    "/": {
+      "get": {
+        "operationId": "root",
+        "description": "gets root directory",
+        "responses": {}
+      }
+    }
+  },
+  "definitions": {
+    "Build": {
+      "type": "object"
+    }
+  }
+}

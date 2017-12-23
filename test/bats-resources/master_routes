@@ -1,0 +1,5 @@
+defmodule Exaggeratetest.Test do
+  def root do
+    {:ok, "root route"}
+  end
+end

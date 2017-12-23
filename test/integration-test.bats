@@ -1,6 +1,7 @@
 #!/usr/bin/env bats
 
 setup(){
+
   #setup_all clause
   if [ "$BATS_TEST_NUMBER" -eq 1 ]; then
 
@@ -12,7 +13,11 @@ setup(){
       GIT_TAG="develop"
     fi
 
+    echo "$GIT_TAG" > gittag
+
     cd "$BATS_TMPDIR"
+
+    rm -rf exaggeratetest
 
     mix new exaggeratetest --sup
 
@@ -20,22 +25,42 @@ setup(){
 
     #replace the mix.exs with the bats resource.
     rm mix.exs
-    mv "$resource_dir/master_mix" ./mix.exs
-
+    cp "$resource_dir/master_mix" ./mix.exs
     #replace the application.exs with the bats resource
     rm ./lib/exaggeratetest/application.ex
-    mv "$resource_dir/master_app" ./lib/exaggeratetest/application.ex
+    cp "$resource_dir/master_app" ./lib/exaggeratetest/application.ex
+    #substitute the git tag value
+    sed -i "s/TAG/$GIT_TAG/" "./mix.exs"
 
+    #get dependencies and build the project.
     mix deps.get
+    #pull the swaggerfile.
+    cp "$resource_dir/test.json" .
+
+    #swagger it up!
+    mix swagger test.json
+
+    #overwrite the endpoints file
+    cp "$resource_dir/master_endpoints" .
 
     mix run --no-halt &
+
     echo $! > "$BATS_TMPDIR/ex_pid"
   fi
 }
 
 teardown(){
-  #teardown_all clause
-  if [ "$BATS_TEST_NUMBER" -eq "${#BATS_TEST_NAMES[@]}" ]; then
+  test_count=${#BATS_TEST_NAMES[@]}
+  if [ "$BATS_TEST_NUMBER" -eq "$test_count" ]; then
+    pid=`echo $BATS_TMPDIR/ex_pid`
+    kill $pid
 
+    rm "$BATS_TMPDIR/ex_pid"
+    rm -rf "$BATS_TMPDIR/exaggeratetest"
   fi
+}
+
+@test "root route" {
+  res=`curl http://localhost:4501/`
+  [ res = "root route" ]
 }

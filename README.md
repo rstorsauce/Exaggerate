@@ -56,12 +56,26 @@ from the swaggerfile prefix.
 ```
 
 - modified application.ex settings
+
 ```elixir
   children = [
     Plug.Adapters.Cowboy.child_spec(:http, Swagger.Routes, [], [port: 4001])
   ]
 ```
 
+## Testing
+
+- basic mix-based unit and integration tests
+
+```bash
+  mix test
+```
+
+- [bats](http://github.com/sstephenson/bats)-based integration tests
+
+```bash
+  bats ./test
+```
 
 ## response encoding.
 
