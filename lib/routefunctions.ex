@@ -6,7 +6,7 @@ defmodule Exaggerate.RouteFunctions.Helpers do
       quote do
         def unquote(f)(conn, param_name, :required) do
           res = unquote(f)(conn, param_name)
-          if res, do: {:ok, res}, else: {:error, 422, "required parameter #{param_name} is missing"}
+          if res, do: {:ok, res}, else: {:error, "#{param_name} is missing"}
         end
       end
     end)
@@ -34,7 +34,7 @@ defmodule Exaggerate.RouteFunctions do
   @doc """
     turns a content-type string into a list of mimetypes.
 
-    iex> Exaggerate.RouteFunctions.process_response_string("text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8") #==>
+    iex> Exaggerate.RouteFunctions.process_response_string(["text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"]) #==>
     ["text/html","application/xhtml+xml","application/xml","*/*"]
   """
 
@@ -118,6 +118,13 @@ defmodule Exaggerate.RouteFunctions do
     end
     conn |> update_resp_header("Content-Type", mimetype, fn _ -> mimetype end)
          |> send_resp(new_code, encoded_res)
+  end
+
+  def drop_nil_values(map) when is_map(map) do
+    Enum.reduce(map, %{}, fn
+         {k,nil}, acc -> acc
+         {k,v}, acc   -> Map.put(acc, k, v)
+       end)
   end
 
 end

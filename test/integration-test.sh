@@ -57,8 +57,17 @@ res=`curl http://localhost:4001/pathparam/parameter`
 [ "$res" = "{\"path parameter\":\"parameter\"}" ]
 
 ##queryparam test
-res=`curl http://localhost:4001/queryparam&param=myvalue`
+res=`curl http://localhost:4001/queryparam?param=myvalue`
 [ "$res" = "{\"query parameter\":\"myvalue\"}" ]
+res=`curl http://localhost:4001/queryparam`
+[ "$res" = "{\"422\":\"error: required parameter 'param' is missing\"}" ]
+
+##optional queryparam test
+res=`curl http://localhost:4001/optionalqueryparam?param=myvalue`
+[ "$res" = "{\"query parameter\":\"myvalue\"}" ]
+res=`curl http://localhost:4001/optionalqueryparam`
+[ "$res" = "{}" ]
+
 
 pid=`cat /tmp/ex_pid`
 kill -KILL $pid

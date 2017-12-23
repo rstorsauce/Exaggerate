@@ -37,6 +37,14 @@
         "parameters": [{"name":"param","in":"query","required":true}],
         "responses": {"200":"query parameter"}
       }
+    },
+    "/optionalqueryparam": {
+      "get": {
+        "operationId": "optionalqueryparam",
+        "description": "gets root directory",
+        "parameters": [{"name":"param","in":"query"}],
+        "responses": {"200":"query parameter"}
+      }
     }
   },
   "definitions": {

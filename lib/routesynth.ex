@@ -180,9 +180,9 @@ defmodule Exaggerate.Codesynth.Routesynth do
     {required_params(list), optional_params(list)} |> fn
       {nil, nil} -> ""
       {"", ""}   -> ""
-      {"", op}   -> "," <> "%{#{op}}"
+      {"", op}   -> "," <> "drop_nil_values(%{#{op}})"
       {rp, ""}   -> "," <> rp
-      {rp, op}   -> "," <> rp <> "," <> "%{#{op}}"
+      {rp, op}   -> "," <> rp <> "," <> "drop_nil_values(%{#{op}})"
     end.()
   end
 
@@ -228,17 +228,23 @@ defmodule Exaggerate.Codesynth.Routesynth do
     code_paths   = get_responses(route_def["responses"], &get_response/2)
 
     params_list  = get_params_list(route_def["parameters"])
-    params_check = needs_with_block?(route_def["parameters"])
-    checked_params = if params_check, do: """
-      with #{get_checked_param_fetch(route_def["parameters"])} do
-    """, else: ""
-    basic_params = get_basic_param_fetch(route_def["parameters"])
-    params_close = if params_check, do: """
-    else
-      {:error, parameter, problem} -> send_formatted(conn, 400, %{"400" => "error \#{problem} in parameter \#{parameter}"})
-    end
-    """, else: ""
+    has_required_params = needs_with_block?(route_def["parameters"])
 
+    {checked_params, params_close} = if has_required_params do
+      {"""
+        with #{get_checked_param_fetch(route_def["parameters"])} do
+       """,
+       """
+       else
+         {:error, problem} -> send_formatted(conn, 422, %{"422" => "error: \#{problem}"})
+       end
+       """}
+    else
+      {"",""}
+    end
+    basic_params = get_basic_param_fetch(route_def["parameters"])
+
+    #adlibbed route structure
     """
     #{verb_string} "#{route_string}" do
       #{summary}

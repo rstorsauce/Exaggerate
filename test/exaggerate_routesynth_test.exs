@@ -24,9 +24,9 @@ defmodule ExaggerateCodesynthUnitTest do
   #marks which seems to confuse the compiler.
 
   test "get_params_list" do
-    assert Exaggerate.Codesynth.Routesynth.get_params_list([%{"required" => false, "name" => "test"}]) == ",%{\"test\" => test}"
-    assert Exaggerate.Codesynth.Routesynth.get_params_list([%{"required" => false, "name" => "test1"}, %{"required" => false, "name" => "test2"}]) == ",%{\"test1\" => test1,\"test2\" => test2}"
-    assert Exaggerate.Codesynth.Routesynth.get_params_list([%{"required" => true, "name" => "test1"}, %{"required" => false, "name" => "test2"}]) == ",test1,%{\"test2\" => test2}"
+    assert Exaggerate.Codesynth.Routesynth.get_params_list([%{"required" => false, "name" => "test"}]) == ",drop_nil_values(%{\"test\" => test})"
+    assert Exaggerate.Codesynth.Routesynth.get_params_list([%{"required" => false, "name" => "test1"}, %{"required" => false, "name" => "test2"}]) == ",drop_nil_values(%{\"test1\" => test1,\"test2\" => test2})"
+    assert Exaggerate.Codesynth.Routesynth.get_params_list([%{"required" => true, "name" => "test1"}, %{"required" => false, "name" => "test2"}]) == ",test1,drop_nil_values(%{\"test2\" => test2})"
   end
 end
 
@@ -169,7 +169,7 @@ defmodule ExaggerateCodesynthIntegrationTest do
             _ -> send_formatted(conn, 200, "success")
           end
         else
-          {:error, parameter, problem} -> send_formatted(conn, 400, %{"400" => "error \#{problem} in parameter \#{parameter}"})
+          {:error, problem} -> send_formatted(conn, 422, %{"422" => "error: \#{problem}"})
         end
       end
       """,
@@ -203,7 +203,7 @@ defmodule ExaggerateCodesynthIntegrationTest do
             _ -> send_formatted(conn, 200, "success")
           end
         else
-          {:error, parameter, problem} -> send_formatted(conn, 400, %{"400" => "error \#{problem} in parameter \#{parameter}"})
+          {:error, problem} -> send_formatted(conn, 422, %{"422" => "error: \#{problem}"})
         end
       end
       """,
@@ -223,7 +223,7 @@ defmodule ExaggerateCodesynthIntegrationTest do
             _ -> send_formatted(conn, 200, "success")
           end
         else
-          {:error, parameter, problem} -> send_formatted(conn, 400, %{"400" => "error \#{problem} in parameter \#{parameter}"})
+          {:error, problem} -> send_formatted(conn, 422, %{"422" => "error: \#{problem}"})
         end
       end
       """,
@@ -245,7 +245,7 @@ defmodule ExaggerateCodesynthIntegrationTest do
             _ -> send_formatted(conn, 200, "success")
           end
         else
-          {:error, parameter, problem} -> send_formatted(conn, 400, %{"400" => "error \#{problem} in parameter \#{parameter}"})
+          {:error, problem} -> send_formatted(conn, 422, %{"422" => "error: \#{problem}"})
         end
       end
       """,
@@ -261,7 +261,7 @@ defmodule ExaggerateCodesynthIntegrationTest do
       get "/optparam" do
         param1 = header_parameter(conn, "param1")
 
-        case TestModule.optparam(conn, %{"param1" => param1}) do
+        case TestModule.optparam(conn, drop_nil_values(%{"param1" => param1})) do
           _ -> send_formatted(conn, 200, "success")
         end
       end
@@ -280,7 +280,7 @@ defmodule ExaggerateCodesynthIntegrationTest do
       param1 = header_parameter(conn, "param1")
       param2 = header_parameter(conn, "param2")
 
-      case TestModule.twoparam(conn, %{"param1" => param1, "param2" => param2}) do
+      case TestModule.twoparam(conn, drop_nil_values(%{"param1" => param1, "param2" => param2})) do
         _ -> send_formatted(conn, 200, "success")
       end
     end
@@ -300,11 +300,11 @@ defmodule ExaggerateCodesynthIntegrationTest do
       do
         param2 = header_parameter(conn, "param2")
 
-        case TestModule.mixparam(conn, param1, %{"param2" => param2}) do
+        case TestModule.mixparam(conn, param1, drop_nil_values(%{"param2" => param2})) do
           _ -> send_formatted(conn, 200, "success")
         end
       else
-        {:error, parameter, problem} -> send_formatted(conn, 400, %{"400" => "error \#{problem} in parameter \#{parameter}"})
+        {:error, problem} -> send_formatted(conn, 422, %{"422" => "error: \#{problem}"})
       end
     end
     """,
