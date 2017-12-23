@@ -24,7 +24,7 @@ defmodule Exaggeratetest.MixProject do
   defp deps do
     [
       {:cowboy, "~> 1.0.0"},
-      {:Exaggerate, git: "https://github.com/rstorsauce/exaggerate.git", tag: "TAG"},
+      {:exaggerate, git: "https://github.com/rstorsauce/exaggerate.git", tag: "TAG"},
     ]
   end
 end

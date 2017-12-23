@@ -71,10 +71,10 @@ from the swaggerfile prefix.
   mix test
 ```
 
-- [bats](http://github.com/sstephenson/bats)-based integration tests
+- integration tests (bash script)
 
 ```bash
-  bats ./test
+  ./lib/integration-test.sh
 ```
 
 ## response encoding.
