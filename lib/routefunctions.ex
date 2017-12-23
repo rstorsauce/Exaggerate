@@ -82,10 +82,6 @@ defmodule Exaggerate.RouteFunctions do
       |> match_response_string
   end
 
-  @json_encoder Application.get_env(:Exaggerate, :json_encoder)
-  @html_encoder Application.get_env(:Exaggerate, :html_encoder)
-
-
   @doc """
     examines the content and sends an response of the appropriate type based on
     the response content specifications in the request header.
@@ -104,9 +100,9 @@ defmodule Exaggerate.RouteFunctions do
   def send_formatted(conn, code, map) when is_map(map) do
     {new_code, encoded_res, mimetype} = case response_type(conn) do
       #:xml ->  {XMLEncoder.encode!(map),  }
-      {:json, mimetype}  -> {code, @json_encoder.encode!(map), mimetype}
-      {:text, mimetype}  -> {code, @json_encoder.encode!(map), mimetype}
-      {:html, mimetype}  -> {code, @html_encoder.encode!(map), mimetype}
+      {:json, mimetype}  -> {code, Application.get_env(:Exaggerate, :json_encoder).encode!(map), mimetype}
+      {:text, mimetype}  -> {code, Application.get_env(:Exaggerate, :json_encoder).encode!(map), mimetype}
+      {:html, mimetype}  -> {code, Application.get_env(:Exaggerate, :html_encoder).encode!(map), mimetype}
       {:error, errormsg} -> {415, errormsg, "text/html"}
     end
     conn |> update_resp_header("Content-Type", mimetype, fn _ -> mimetype end)
@@ -115,9 +111,9 @@ defmodule Exaggerate.RouteFunctions do
 
   def send_formatted(conn, code, text) when is_binary(text) do
     {new_code, encoded_res, mimetype} = case response_type(conn) do
-      {:json, mimetype} -> {code, @json_encoder.encode!(%{"text" => text}), mimetype}
+      {:json, mimetype} -> {code, Application.get_env(:Exaggerate, :json_encoder).encode!(%{"text" => text}), mimetype}
       {:text, mimetype} -> {code, text, mimetype}
-      {:html, mimetype} -> {code, @html_encoder.bodyonly(text), mimetype}
+      {:html, mimetype} -> {code, Application.get_env(:Exaggerate, :html_encoder).bodyonly(text), mimetype}
       {:error, errormsg} -> {415, errormsg, "text/html"}
     end
     conn |> update_resp_header("Content-Type", mimetype, fn _ -> mimetype end)

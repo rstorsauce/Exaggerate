@@ -13,8 +13,6 @@ setup(){
       GIT_TAG="develop"
     fi
 
-    echo "$GIT_TAG" > gittag
-
     cd "$BATS_TMPDIR"
 
     rm -rf exaggeratetest
@@ -41,9 +39,10 @@ setup(){
     mix swagger test.json
 
     #overwrite the endpoints file
-    cp "$resource_dir/master_endpoints" .
+    rm ./lib/test/test.ex
+    cp "$resource_dir/master_endpoints" ./lib/test/test.ex
 
-    mix run --no-halt &
+    nohup mix run --no-halt > /dev/null 2> /dev/null < /dev/null &
 
     echo $! > "$BATS_TMPDIR/ex_pid"
   fi
@@ -61,6 +60,6 @@ teardown(){
 }
 
 @test "root route" {
-  res=`curl http://localhost:4501/`
+  res=`curl http://localhost:4001/`
   [ res = "root route" ]
 }

@@ -5,7 +5,7 @@ defmodule Exaggeratetest.Application do
 
   def start(_type, _args) do
     children = [
-        Plug.Adapters.Cowboy.child_spec(:http, Swagger.Routes, [], [port: 4001])
+        Plug.Adapters.Cowboy.child_spec(:http, Test.Routes, [], [port: 4001])
     ]
 
     opts = [strategy: :one_for_one, name: Exaggeratetest.Supervisor]

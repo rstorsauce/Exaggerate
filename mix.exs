@@ -11,7 +11,11 @@ defmodule Exaggerate.Mixfile do
     ]
   end
 
-  def application, do: [applications: [:httpoison]]
+  def application, do: [
+    applications: [:httpoison],
+    env: [json_encoder: Poison,
+          html_encoder: Exaggerate.HTMLEncode]
+  ]
 
   defp deps do
     [
