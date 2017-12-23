@@ -6,7 +6,7 @@ defmodule Exaggerate.RouteFunctions.Helpers do
       quote do
         def unquote(f)(conn, param_name, :required) do
           res = unquote(f)(conn, param_name)
-          if res, do: {:ok, res}, else: {:error, "#{param_name} is missing"}
+          if res, do: {:ok, res}, else: {:error, "required parameter '#{param_name}' is missing"}
         end
       end
     end)
