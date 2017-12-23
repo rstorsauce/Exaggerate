@@ -3,7 +3,7 @@ defmodule Exaggerate.Mixfile do
 
   def project do
     [
-      app: :Exaggerate,
+      app: :exaggerate,
       version: "0.1.0",
       elixir: "~> 1.6-dev",
       start_permanent: Mix.env == :prod,
@@ -13,8 +13,6 @@ defmodule Exaggerate.Mixfile do
 
   def application, do: [
     applications: [:httpoison],
-    env: [json_encoder: Poison,
-          html_encoder: Exaggerate.HTMLEncode]
   ]
 
   defp deps do
