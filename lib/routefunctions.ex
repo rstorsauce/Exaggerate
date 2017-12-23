@@ -38,7 +38,7 @@ defmodule Exaggerate.RouteFunctions do
     ["text/html","application/xhtml+xml","application/xml","*/*"]
   """
 
-  def process_response_string(s) when is_binary(s) do
+  def process_response_string([s]) when is_binary(s) do
     s |> String.split(",")
       |> Enum.map(fn x -> x |> String.split(";") |> Enum.at(0) end)
   end

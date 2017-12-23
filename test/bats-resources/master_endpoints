@@ -1,5 +1,5 @@
-defmodule Exaggeratetest.Test do
-  def root do
+defmodule Test do
+  def root(_conn) do
     {:ok, "root route"}
   end
 end

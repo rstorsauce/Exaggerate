@@ -17,7 +17,7 @@ defmodule Exaggeratetest.MixProject do
     [
       applications: [:cowboy, :plug],
       extra_applications: [:logger],
-      mod: {Myproject.Application, []}
+      mod: {Exaggeratetest.Application, []}
     ]
   end
 
