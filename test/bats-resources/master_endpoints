@@ -2,4 +2,10 @@ defmodule Test do
   def root(_conn) do
     {:ok, "root route"}
   end
+  def pathparam(_conn, param) do
+    {:ok, %{"path parameter" => param}}
+  end
+  def queryparam(_conn, param) do
+    {:ok, %{"query parameter" => param}}
+  end
 end

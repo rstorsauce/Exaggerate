@@ -50,9 +50,17 @@ sleep 5
 
 ## ROOT TEST
 res=`curl http://localhost:4001/`
-[ res = "{\"text\":\"root route\"}" ]
+[ "$res" = "{\"text\":\"root route\"}" ]
 
-pid=`echo /tmp/ex_pid`
+## pathparam test
+res=`curl http://localhost:4001/pathparam/parameter`
+[ "$res" = "{\"path parameter\":\"parameter\"}" ]
+
+##queryparam test
+res=`curl http://localhost:4001/queryparam&param=myvalue`
+[ "$res" = "{\"query parameter\":\"myvalue\"}" ]
+
+pid=`cat /tmp/ex_pid`
 kill -KILL $pid
 
 rm "/tmp/ex_pid"

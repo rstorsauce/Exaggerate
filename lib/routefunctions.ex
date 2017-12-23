@@ -5,7 +5,7 @@ defmodule Exaggerate.RouteFunctions.Helpers do
     functions |> Enum.map(fn f ->
       quote do
         def unquote(f)(conn, param_name, :required) do
-          res = body_parameter(conn, param_name)
+          res = unquote(f)(conn, param_name)
           if res, do: {:ok, res}, else: {:error, 422, "required parameter #{param_name} is missing"}
         end
       end

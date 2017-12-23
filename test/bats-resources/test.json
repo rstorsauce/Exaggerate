@@ -21,6 +21,22 @@
         "description": "gets root directory",
         "responses": {}
       }
+    },
+    "/pathparam/{param}": {
+      "get": {
+        "operationId": "pathparam",
+        "description": "gets root directory",
+        "parameters": [{"name":"param","in":"path","required":true}],
+        "responses": {"200":"path parameter"}
+      }
+    },
+    "/queryparam": {
+      "get": {
+        "operationId": "queryparam",
+        "description": "gets root directory",
+        "parameters": [{"name":"param","in":"query","required":true}],
+        "responses": {"200":"query parameter"}
+      }
     }
   },
   "definitions": {
