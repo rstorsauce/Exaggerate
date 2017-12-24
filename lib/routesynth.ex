@@ -17,7 +17,7 @@ defmodule Exaggerate.Codesynth.Routesynth do
       # modifying #{filename} instead of this file.
       #
 
-      defmodule #{modulename}.Routes do
+      defmodule #{modulename}.Router do
         use Plug.Router
         import Exaggerate.RouteFunctions
 
@@ -250,7 +250,7 @@ defmodule Exaggerate.Codesynth.Routesynth do
       #{summary}
       #{checked_params}
       #{basic_params}
-      case #{routemodule}.#{operation}(conn#{params_list}) do
+      case #{routemodule}.Web.Endpoint.#{operation}(conn#{params_list}) do
         #{code_paths}
         #{default_code}
       end

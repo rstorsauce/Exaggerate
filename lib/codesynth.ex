@@ -67,9 +67,9 @@ defmodule Exaggerate.Codesynth do
         |> Exaggerate.Codesynth.Endpointsynth.build_endpointmodule(swaggerfile, modulename, get_defs(routefile_tokens))
         |> insert_code(routefile_tokens)
 
-      Path.join(moduledir, "routes.ex")
+      Path.join(moduledir, "router.ex")
         |> File.write!(route_content)
-      Path.join(moduledir, String.downcase(modulename) <> ".ex")
+      Path.join(moduledir, "endpoint.ex")
         |> File.write!(endpoint_content)
 
     else
@@ -79,9 +79,9 @@ defmodule Exaggerate.Codesynth do
         |> Exaggerate.Codesynth.Endpointsynth.build_endpointmodule(swaggerfile, modulename)
 
       File.mkdir!(moduledir)
-      Path.join(moduledir, "routes.ex")
+      Path.join(moduledir, "router.ex")
         |> File.write!(route_content)
-      Path.join(moduledir, String.downcase(modulename) <> ".ex")
+      Path.join(moduledir, "endpoint.ex")
         |> File.write!(endpoint_content)
     end
   end

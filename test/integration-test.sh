@@ -5,7 +5,7 @@ set -ex
 #expected to be run from the project root directory.
 
 wd=`pwd`
-resource_dir="$wd/test/bats-resources"
+resource_dir="$wd/test/resources"
 
 # $1 can be used to specify a different branch, if desired.
 # defaults to "develop"
@@ -63,21 +63,24 @@ res=`curl http://localhost:4001/`
 [ "$res" = "{\"text\":\"root route\"}" ]
 
 ## pathparam test
-res=`curl http://localhost:4001/pathparam/parameter`
-[ "$res" = "{\"path parameter\":\"parameter\"}" ]
+res=`curl http://localhost:4001/pathparam/value`
+[ "$res" = "{\"path parameter\":\"value\"}" ]
 
 ##queryparam test
-res=`curl http://localhost:4001/queryparam?param=myvalue`
-[ "$res" = "{\"query parameter\":\"myvalue\"}" ]
+res=`curl http://localhost:4001/queryparam?param=value`
+[ "$res" = "{\"query parameter\":\"value\"}" ]
 res=`curl http://localhost:4001/queryparam`
 [ "$res" = "{\"422\":\"error: required parameter 'param' is missing\"}" ]
 
 ##optional queryparam test
-res=`curl http://localhost:4001/optionalqueryparam?param=myvalue`
-[ "$res" = "{\"query parameter\":\"myvalue\"}" ]
+res=`curl http://localhost:4001/optionalqueryparam?param=value`
+[ "$res" = "{\"query parameter\":\"value\"}" ]
 res=`curl http://localhost:4001/optionalqueryparam`
 [ "$res" = "{}" ]
 
+##bodyparam test
+res=`curl --data "param=value" -X POST http://localhost:4001/bodyparam`
+[ "$res" = "{\"body parameter\":\"value\"}" ]
 
 pid=`cat /tmp/ex_pid`
 kill -KILL $pid

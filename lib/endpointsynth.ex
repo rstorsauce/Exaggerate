@@ -5,7 +5,7 @@ defmodule Exaggerate.Codesynth.Endpointsynth do
   def build_endpointmodule(swaggerfile, _filename, modulename, defs_to_ignore \\ []) do
     endpointcode = build_endpoints(swaggerfile["paths"], modulename, defs_to_ignore)
     """
-      defmodule #{modulename} do
+      defmodule #{modulename}.Web.Endpoint do
         #{endpointcode}
       end
     """ |> Code.format_string! |> Enum.join

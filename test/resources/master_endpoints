@@ -10,4 +10,11 @@ defmodule Test do
 
   def optionalqueryparam(_conn, %{"param" => param}), do: {:ok, %{"query parameter" => param}}
   def optionalqueryparam(_conn, _param), do: {:ok, %{}}
+
+  def bodyparam(_conn, param), do: {:ok, %{"body parameter" => param}}
+
+  def fileupload(conn, file) do
+    IO.inspect(file)
+    {:ok, "ok"}
+  end
 end

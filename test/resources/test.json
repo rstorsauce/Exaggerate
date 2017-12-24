@@ -25,7 +25,7 @@
     "/pathparam/{param}": {
       "get": {
         "operationId": "pathparam",
-        "description": "gets root directory",
+        "description": "reflects the path parameter",
         "parameters": [{"name":"param","in":"path","required":true}],
         "responses": {"200":"path parameter"}
       }
@@ -33,7 +33,7 @@
     "/queryparam": {
       "get": {
         "operationId": "queryparam",
-        "description": "gets root directory",
+        "description": "reflects the query parameter",
         "parameters": [{"name":"param","in":"query","required":true}],
         "responses": {"200":"query parameter"}
       }
@@ -41,9 +41,25 @@
     "/optionalqueryparam": {
       "get": {
         "operationId": "optionalqueryparam",
-        "description": "gets root directory",
+        "description": "reflects the query parameter",
         "parameters": [{"name":"param","in":"query"}],
         "responses": {"200":"query parameter"}
+      }
+    },
+    "/bodyparam": {
+      "post": {
+        "operationId": "bodyparam",
+        "description": "reflects the body parameter",
+        "parameters": [{"name":"param","in":"body","required":true}],
+        "responses": {"200":"body parameter"}
+      }
+    },
+    "/fileupload": {
+      "post": {
+        "operationId": "fileupload",
+        "description": "reflects a file upload",
+        "parameters": [{"name":"file","in":"formData","required":true}],
+        "responses": {"422":"file upload error"}
       }
     }
   },
