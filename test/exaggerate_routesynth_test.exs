@@ -5,12 +5,6 @@ defmodule Codesynth.Helper do
       get_route = unquote(map)
       get_code = unquote(code) |> String.trim_trailing |> Code.format_string! |> Enum.join
 
-      #IO.puts("======")
-      #IO.puts Exaggerate.Codesynth.build_route(unquote(verb), unquote(path), get_route)
-      #IO.puts("------")
-      #IO.puts get_code
-      #IO.puts("------")
-
       assert Exaggerate.Codesynth.Routesynth.build_route(unquote(verb), unquote(path), get_route, "TestModule") == get_code
     end
   end
@@ -33,16 +27,6 @@ end
 defmodule ExaggerateCodesynthIntegrationTest do
   import Codesynth.Helper
   use ExUnit.Case
-
-  #test "build route requirements" do
-  #  get_route = %{"responses" => %{"default" => "success"}}
-  #  refute Exaggerate.Paths.Item.Get.validate(get_route)
-  #  assert_raise RuntimeError, "Exaggerate requires operationIds for all routes.", Exaggerate.Codesynth.build_route(:get, "/barebones", get_route)
-
-  #  get_route = %{"operationId" => "barebones"}
-  #  refute Exaggerate.Paths.Item.Get.validate(get_route)
-  #  assert_raise RuntimeError, "Exaggerate requires response for all routes.", Exaggerate.Codesynth.build_route(:get, "/barebones", get_route)
-  #end
 
   test "bare bones get" do
 

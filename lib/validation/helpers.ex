@@ -64,7 +64,8 @@ defmodule Exaggerate.Validation.Helpers do
     end
 
     quote do
-      def validate(api_map), do: validate(api_map, unquote(required), unquote(optional))
+      def validate(api_map) when is_map(api_map), do: validate(api_map, unquote(required), unquote(optional))
+      def validate(value), do: {:error, __MODULE__, "foreign value #{inspect value} passed for object"}
       def validate(api_map,[],[]), do: unquote(extra_results)
       unquote(required_validation_calls)
       unquote(optional_validation_calls)

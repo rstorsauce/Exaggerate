@@ -64,18 +64,18 @@ defmodule Exaggerate.Validation.Server do
 
   url_parameter    :url
   string_parameter :description
-  map_parameter    :variables,   ServerVariables
+  map_parameter    :variables,   ServerVariable
 end
 
-defmodule Exaggerate.Validation.ServerVariables do
+defmodule Exaggerate.Validation.ServerVariable do
 
   use Exaggerate.Validation.Helpers
 
-  validate_keys [:url], [:enum, :default]
+  validate_keys [:default], [:enum, :description]
 
-  url_parameter     :url
   sarray_parameter  :enum
   string_parameter  :default
+  string_parameter  :description
 end
 
 defmodule Exaggerate.Validation.Components do
