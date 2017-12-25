@@ -39,8 +39,8 @@ cp "$resource_dir/test.json" .
 mix swagger test.json
 
 #overwrite the endpoints file
-rm ./lib/test/test.ex
-cp "$resource_dir/master_endpoints" ./lib/test/test.ex
+rm ./lib/test/endpoint.ex
+cp "$resource_dir/master_endpoints" ./lib/test/endpoint.ex
 
 mix compile
 
@@ -48,10 +48,9 @@ mix compile
 
 if [ -f /tmp/ex_pid ]; then
   pid=`cat /tmp/ex_pid`
-  kill -KILL "$pid"
   rm -f /tmp/ex_pid
+  kill -KILL "$pid"
 fi
-
 
 mix run --no-halt &
 echo $! > /tmp/ex_pid
@@ -83,9 +82,9 @@ res=`curl --data "param=value" -X POST http://localhost:4001/bodyparam`
 [ "$res" = "{\"body parameter\":\"value\"}" ]
 
 pid=`cat /tmp/ex_pid`
+rm "/tmp/ex_pid"
 kill -KILL $pid
 
-rm "/tmp/ex_pid"
 rm -rf "/tmp/exaggeratetest"
 
 echo "TESTS PASSED."

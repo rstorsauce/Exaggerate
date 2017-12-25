@@ -2,6 +2,7 @@ defmodule Exaggerate.Mixfile do
   use Mix.Project
 
   def project do
+    Application.put_env(:exaggerate, :real_root, File.cwd!)
     [
       app: :exaggerate,
       version: "0.1.0",
@@ -11,14 +12,15 @@ defmodule Exaggerate.Mixfile do
     ]
   end
 
-  def application, do: [
-    applications: [:httpoison],
-  ]
+  def application do
+    [
+      applications: [:logger],
+    ]
+  end
 
   defp deps do
     [
       {:poison, "~> 3.1"},
-      {:httpoison, "~> 0.13"},
       {:plug, "~> 1.4"}
     ]
   end

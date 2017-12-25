@@ -3,6 +3,9 @@ defmodule Mix.Tasks.Swagger do
 
   @shortdoc "generates an api from the supplied swaggerfile(s)"
   def run(swaggerfile) do
+
+    swaggerfile |> Enum.map(&Exaggerate.Validation.validate!/1)
+
     swaggerfile |> Enum.map(&Exaggerate.Codesynth.buildswaggerfile/1)
   end
 end

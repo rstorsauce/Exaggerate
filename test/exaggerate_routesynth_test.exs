@@ -36,11 +36,11 @@ defmodule ExaggerateCodesynthIntegrationTest do
 
   #test "build route requirements" do
   #  get_route = %{"responses" => %{"default" => "success"}}
-  #  refute Exaggerate.Paths.Item.Get.is_valid?(get_route)
+  #  refute Exaggerate.Paths.Item.Get.validate(get_route)
   #  assert_raise RuntimeError, "Exaggerate requires operationIds for all routes.", Exaggerate.Codesynth.build_route(:get, "/barebones", get_route)
 
   #  get_route = %{"operationId" => "barebones"}
-  #  refute Exaggerate.Paths.Item.Get.is_valid?(get_route)
+  #  refute Exaggerate.Paths.Item.Get.validate(get_route)
   #  assert_raise RuntimeError, "Exaggerate requires response for all routes.", Exaggerate.Codesynth.build_route(:get, "/barebones", get_route)
   #end
 

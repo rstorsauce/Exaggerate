@@ -4,11 +4,11 @@ defmodule Exaggerate.Codesynth do
 
   def swaggerfile_exists?(""), do: false
   def swaggerfile_exists?(filename), do: @project_root |> Path.join(filename) |> File.exists?
-  def swaggerfile_isvalid?(filename) do
+  def swaggerfile_isvalidate(filename) do
     swaggerfile_exists?(filename) && (@project_root |> Path.join(filename)
       |> File.read!
       |> Poison.decode!
-      |> Exaggerate.Validation.OpenAPI.is_valid?)
+      |> Exaggerate.Validation.OpenAPI.validate)
   end
 
   @doc """
@@ -45,7 +45,7 @@ defmodule Exaggerate.Codesynth do
     swaggerfile_content = @project_root
       |> Path.join(swaggerfile)
       |> File.read!
-      |> Poison.decode!
+      |> Poison.encode! 
 
     route_content = swaggerfile_content
       |> Exaggerate.Codesynth.Routesynth.build_routemodule(swaggerfile, modulename)
