@@ -45,7 +45,7 @@ defmodule Exaggerate.Codesynth do
     swaggerfile_content = @project_root
       |> Path.join(swaggerfile)
       |> File.read!
-      |> Poison.encode! 
+      |> Poison.decode!
 
     route_content = swaggerfile_content
       |> Exaggerate.Codesynth.Routesynth.build_routemodule(swaggerfile, modulename)

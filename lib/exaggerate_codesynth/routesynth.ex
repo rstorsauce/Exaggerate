@@ -3,8 +3,10 @@ defmodule Exaggerate.Codesynth.Routesynth do
   @doc """
     the master function which creates a routemodule file from a swagger file.
   """
-  def build_routemodule(swaggerfile, filename, modulename) do
-    routecode = build_routes(swaggerfile["paths"], modulename)
+  def build_routemodule(swaggermap, filename, modulename) when is_map(swaggermap)
+                                                          when is_binary(filename)
+                                                          when is_binary(modulename) do
+    routecode = build_routes(swaggermap["paths"], modulename)
     optional_plugs = "" #for now.
 
     """

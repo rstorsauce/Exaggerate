@@ -37,6 +37,30 @@ defmodule Exaggerate.Validation do
   def validation_or(_, :ok, _error), do: :ok
   def validation_or(_,_, error), do: error
 
+  @doc """
+    returns whether or not a string is a mimestring.
+
+    iex> Exaggerate.Validation.is_mimestring("image")  #==>
+    false
+
+    iex> Exaggerate.Validation.is_mimestring("image/jpeg")  #==>
+    true
+
+    iex> Exaggerate.Validation.is_mimestring("*/jpeg")  #==>
+    true
+
+    iex> Exaggerate.Validation.is_mimestring("foo/bar")  #==>
+    false
+  """
+  def is_mimestring(s) when is_binary(s) do
+    with [toplevel, subtype] <- String.split(s, "/") do
+      toplevel in ["application", "audio", "example", "font", "image", "message", "model", "multipart", "text", "video", "*"]
+        && (String.length(subtype) > 0)
+    else
+      _ -> false
+    end
+  end
+
   def validate!(swaggerfile) do
 
     Application.ensure_all_started(:yaml_elixir)

@@ -27,7 +27,7 @@
         "operationId": "pathparam",
         "description": "reflects the path parameter",
         "parameters": [{"name":"param","in":"path","required":true}],
-        "responses": {"200":"path parameter"}
+        "responses": {"200":{"description":"path parameter"}}
       }
     },
     "/queryparam": {
@@ -35,7 +35,7 @@
         "operationId": "queryparam",
         "description": "reflects the query parameter",
         "parameters": [{"name":"param","in":"query","required":true}],
-        "responses": {"200":"query parameter"}
+        "responses": {"200":{"description":"query parameter"}}
       }
     },
     "/optionalqueryparam": {
@@ -43,7 +43,7 @@
         "operationId": "optionalqueryparam",
         "description": "reflects the query parameter",
         "parameters": [{"name":"param","in":"query"}],
-        "responses": {"200":"query parameter"}
+        "responses": {"200":{"description": "query parameter"}}
       }
     },
     "/bodyparam": {
@@ -51,7 +51,7 @@
         "operationId": "bodyparam",
         "description": "reflects the body parameter",
         "parameters": [{"name":"param","in":"body","required":true}],
-        "responses": {"200":"body parameter"}
+        "responses": {"200":{"description": "body parameter"}}
       }
     },
     "/fileupload": {
@@ -59,7 +59,7 @@
         "operationId": "fileupload",
         "description": "reflects a file upload",
         "parameters": [{"name":"file","in":"formData","required":true}],
-        "responses": {"422":"file upload error"}
+        "responses": {"422":{"description": "invalid file sent"}}
       }
     }
   },

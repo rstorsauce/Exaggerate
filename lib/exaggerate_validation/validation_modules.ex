@@ -10,7 +10,7 @@ defmodule Exaggerate.Validation.OpenAPI do
   object_parameter :paths
   array_parameter  :servers,      Server
   object_parameter :components
-  array_parameter  :security,     SecurityRequirement
+  array_parameter  :security,     Securityrequirement
   array_parameter  :tags,         Tag
   object_parameter :externalDocs, ExternalDocumentation
 
@@ -151,12 +151,12 @@ defmodule Exaggerate.Validation.Operation do
   sarray_parameter   :tags
   string_parameter   :summary
   string_parameter   :description
-  object_parameter   :externalDocs, ExternalDocumentation
+  object_parameter   :externalDocs, Externaldocumentation
   array_parameter    :parameters,   Parameter,   Reference
   object_parameter   :requestBody,  Requestbody, Reference
   map_parameter      :callbacks,    Callback,    Reference
   boolean_parameter  :deprecated
-  array_parameter    :security,     SecurityRequirement
+  array_parameter    :security,     Securityrequirement
   array_parameter    :servers,      Server
 
   #make sure that there are no duplicates going on.
@@ -174,7 +174,7 @@ defmodule Exaggerate.Validation.Operation do
   def further_validation(%{}), do: :ok
 end
 
-defmodule Exaggerate.Validation.ExternalDocumentation do
+defmodule Exaggerate.Validation.Externaldocumentation do
 
   use Exaggerate.Validation.Helpers
 
@@ -212,7 +212,7 @@ defmodule Exaggerate.Validation.Parameter do
   ##############################################################################
   # content-style parameters
 
-  map_parameter     :content, MediaType
+  map_parameter     :content, Mediatype
 
   ##############################################################################
 
@@ -220,7 +220,12 @@ defmodule Exaggerate.Validation.Parameter do
   def further_validation(%{"examples" => _, "example" => _}), do: {:error, Parameter, "examples is mutually exclusive to example"}
   def further_validation(%{"in" => "path", "required" => true}), do: :ok
   def further_validation(%{"in" => "path"}), do: {:error, Parameter, "path parameters must be required"}
-  def further_validation(%{}), do: :ok
+  def further_validation(%{"in" => location}) when location in ["query", "header", "path", "cookie"], do: :ok
+  def further_validation(%{"in" => location}) when location in ["body", "formQuery"] do
+    Logger.warn("Swagger/OpenAPI 2.0 parameter location #{inspect location} support is being deprecated.")
+    :ok
+  end
+  def further_validation(%{"in" => location}), do: {:error, Parameter, "path parameter location #{inspect location} is not supported."}
 
 end
 
@@ -230,7 +235,7 @@ defmodule Exaggerate.Validation.Requestbody do
 
   validate_keys [:content], [:description, :required]
 
-  map_parameter     :content, MediaType
+  map_parameter     :content, Mediatype
   string_parameter  :description
   boolean_parameter :required
 end
@@ -243,7 +248,7 @@ defmodule Exaggerate.Validation.Mediatype do
 
   object_parameter :schema,    Schema, Reference
   object_parameter :example,   Any
-  array_parameter  :examples,  Example
+  map_parameter    :examples,  Example, Reference
   map_parameter    :encoding,  Encoding
 
   def further_validation(%{"example" => _, "examples" => _}), do: {:error, Mediatype, "examples is mutually exclusive to example"}
@@ -264,6 +269,17 @@ defmodule Exaggerate.Validation.Encoding do
   string_parameter  :style
   boolean_parameter :explode
   boolean_parameter :allowReserved
+
+  def further_validation(%{"contentType" => typelist}) when is_binary(typelist) do
+    typelist |> String.split(",")
+             |> Enum.map(&String.trim/1)
+             |> Enum.map(&Exaggerate.Validation.is_mimestring/1)
+             |> Enum.reduce(:ok, fn (true, :ok) -> :ok
+                                    (false, :ok) -> {:error, Encoding, "contentType value is not a mimestring"}
+                                    (_, err) -> err
+                                 end)
+  end
+  def further_validation(%{}), do: :ok
 end
 
 defmodule Exaggerate.Validation.Responses do
@@ -276,7 +292,7 @@ defmodule Exaggerate.Validation.Responses do
   def invalid_or_nil("5" <> <<_a::size(16)>>), do: nil
   def invalid_or_nil(anything_else), do: anything_else
 
-  def validate(responses = %{}) do
+  def validate(responses) when is_map(responses) do
     #check to make sure that the keys are all in the correct form (default or [1-5]xx)
     invalid_responses = responses |> Map.keys
         |> Enum.map(&Exaggerate.Validation.Responses.invalid_or_nil/1)
@@ -290,6 +306,7 @@ defmodule Exaggerate.Validation.Responses do
         |> Exaggerate.Validation.error_search
     end
   end
+  def validate(responses), do: {:error, Responses, "not an object map, got #{inspect responses}"}
 end
 
 defmodule Exaggerate.Validation.Response do
@@ -300,7 +317,7 @@ defmodule Exaggerate.Validation.Response do
 
   string_parameter :description
   map_parameter    :headers, Header,    Reference
-  map_parameter    :content, MediaType, Reference
+  map_parameter    :content, Mediatype, Reference
   map_parameter    :links,   Link,      Reference
 end
 
@@ -335,8 +352,8 @@ defmodule Exaggerate.Validation.Link do
 
   string_parameter :operationRef
   string_parameter :operationId
-  map_parameter    :parameters,  Any, RuntimeExpression
-  object_parameter :requestBody, Any, RuntimeExpression
+  map_parameter    :parameters,  Any, Runtimeexpression
+  object_parameter :requestBody, Any, Runtimeexpression
   string_parameter :description
   object_parameter :server,      Server
 end
@@ -367,14 +384,14 @@ defmodule Exaggerate.Validation.Header do
   ##############################################################################
   # content-style parameters
 
-  map_parameter     :content, MediaType
+  map_parameter     :content, Mediatype
 
   ##############################################################################
 
   def further_validation(%{"schema" => _, "content" => _}), do: {:error, Header, "schema is mutually exclusive to content"}
   def further_validation(%{"examples" => _, "example" => _}), do: {:error, Header, "examples is mutually exclusive to example"}
   def further_validation(%{"in" => _}), do: {:error, Header, "headers may not have in parameters"}
-  def further_validation(%{"name" => _}), do: {:error, Header, "heades may not have names"}
+  def further_validation(%{"name" => _}), do: {:error, Header, "headers may not have names"}
   def further_validation(%{}), do: :ok
 
 end
@@ -387,7 +404,7 @@ defmodule Exaggerate.Validation.Tag do
 
   string_parameter :name
   string_parameter :description
-  object_parameter :externalDocs, ExternalDocumentation
+  object_parameter :externalDocs, Externaldocumentation
 end
 
 defmodule Exaggerate.Validation.Examples do
@@ -401,10 +418,13 @@ defmodule Exaggerate.Validation.Reference do
 
   use Exaggerate.Validation.Helpers
 
-  pass_validate()
+  def validate(%{"$ref" => _ref}), do: :ok
+  def validate(map) when is_map(map), do: {:error, Reference, "invalid reference #{inspect map}."}
+  def validate(not_map), do: {:error, Reference, "invalid reference, expected map, got #{inspect not_map}."}
+
 end
 
-defmodule Exaggerate.Validation.RuntimeExpression do
+defmodule Exaggerate.Validation.Runtimeexpression do
 
   use Exaggerate.Validation.Helpers
 
@@ -432,7 +452,7 @@ defmodule Exaggerate.Validation.XML do
   pass_validate()
 end
 
-defmodule Exaggerate.Validation.SecurityScheme do
+defmodule Exaggerate.Validation.Securityscheme do
 
   require Logger
 
@@ -451,24 +471,24 @@ defmodule Exaggerate.Validation.SecurityScheme do
   def further_validation(%{"type" => "apiKey", "name" => _, "in" => "query"}),  do: :ok
   def further_validation(%{"type" => "apiKey", "name" => _, "in" => "header"}), do: :ok
   def further_validation(%{"type" => "apiKey", "name" => _, "in" => "cookie"}), do: :ok
-  def further_validation(%{"type" => "apiKey", "name" => _, "in" => location}), do: {:error, SecurityScheme, "apiKey security data cannot be in #{location}"}
-  def further_validation(%{"type" => "apiKey", "in" => _}),                     do: {:error, SecurityScheme, "apiKey security requires a name parameter."}
-  def further_validation(%{"type" => "apiKey"}),                                do: {:error, SecurityScheme, "apiKey security requires an in parameter."}
+  def further_validation(%{"type" => "apiKey", "name" => _, "in" => location}), do: {:error, Securityscheme, "apiKey security data cannot be in #{location}"}
+  def further_validation(%{"type" => "apiKey", "in" => _}),                     do: {:error, Securityscheme, "apiKey security requires a name parameter."}
+  def further_validation(%{"type" => "apiKey"}),                                do: {:error, Securityscheme, "apiKey security requires an in parameter."}
 
   def further_validation(%{"type" => "http", "scheme" => _scheme}) do
     #TODO: check HTTP RFC 7235 to correctly identify valid schemes.
     Logger.warn("http security schemes are currently not correctly parsed.")
     :ok
   end
-  def further_validation(%{"type" => "http"}), do: {:error, SecurityScheme, "http security requires an RFC7235 scheme"}
+  def further_validation(%{"type" => "http"}), do: {:error, Securityscheme, "http security requires an RFC7235 scheme"}
 
   def further_validation(%{"type" => "oauth2", "flows" => _}), do: :ok
-  def further_validation(%{"type" => "oauth2"}), do: {:error, SecurityScheme, "oauth2 security requires a flow object"}
+  def further_validation(%{"type" => "oauth2"}), do: {:error, Securityscheme, "oauth2 security requires a flow object"}
 
   def further_validation(%{"type" => "openIdConnect", "openIdConnectUrl" => _}), do: :ok
-  def further_validation(%{"type" => "openIdConnect"}), do: {:error, SecurityScheme, "openIdConnect requires a connection URL"}
+  def further_validation(%{"type" => "openIdConnect"}), do: {:error, Securityscheme, "openIdConnect requires a connection URL"}
 
-  def further_validation(%{}), do: {:error, SecurityScheme, "there is an error in the type of your security scheme."}
+  def further_validation(%{}), do: {:error, Securityscheme, "there is an error in the type of your security scheme."}
 end
 
 defmodule Exaggerate.Validation.Flows do
@@ -479,6 +499,13 @@ defmodule Exaggerate.Validation.Flows do
 end
 
 defmodule Exaggerate.Validation.Flow do
+
+  use Exaggerate.Validation.Helpers
+
+  pass_validate()
+end
+
+defmodule Exaggerate.Validation.Securityrequirement do
 
   use Exaggerate.Validation.Helpers
 

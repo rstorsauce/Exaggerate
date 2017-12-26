@@ -63,8 +63,9 @@ defmodule ExaggerateInfoUnitTest do
     fails Info, @infobase |> Map.put("version", %{"this is not" => "a string"})
     fails Info, @infobase |> Map.put("description", %{"this is not" => "a string"})
     fails Info, @infobase |> Map.put("termsOfService", %{"this is not" => "a string"})
-    fails Info, @infobase |> Map.put("contact", "this is not a contact object")
+    fails Info, @infobase |> Map.put("contact", "this is not an object")
     fails Info, @infobase |> Map.put("license", %{"this is not" => "a license object"})
+    fails Info, @infobase |> Map.put("license", "this is not an object")
   end
 end
 
@@ -215,4 +216,481 @@ defmodule ExaggerateServerVariableUnitTest do
     fails ServerVariable, @servervariablebase |> Map.put("default", %{"this is not" => "a string"})
     fails ServerVariable, @servervariablebase |> Map.put("description", %{"this is not" => "a string"})
   end
+end
+
+defmodule ExaggerateOperationUnitTest do
+  use Validation.Helper
+  use ExUnit.Case
+
+  @operationbase """
+  {
+    "tags": [
+      "pet"
+    ],
+    "summary": "Updates a pet in the store with form data",
+    "operationId": "updatePetWithForm",
+    "parameters": [
+      {
+        "name": "petId",
+        "in": "path",
+        "description": "ID of pet that needs to be updated",
+        "required": true,
+        "schema": {
+          "type": "string"
+        }
+      }
+    ],
+    "requestBody": {
+      "content": {
+        "application/x-www-form-urlencoded": {
+          "schema": {
+            "type": "object",
+             "properties": {
+                "name": {
+                  "description": "Updated name of the pet",
+                  "type": "string"
+                },
+                "status": {
+                  "description": "Updated status of the pet",
+                  "type": "string"
+               }
+             },
+          "required": ["status"]
+          }
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "description": "Pet updated.",
+        "content": {
+          "application/json": {},
+          "application/xml": {}
+        }
+      },
+      "405": {
+        "description": "Invalid input",
+        "content": {
+          "application/json": {},
+          "application/xml": {}
+        }
+      }
+    },
+    "security": [
+      {
+        "petstore_auth": [
+          "write:pets",
+          "read:pets"
+        ]
+      }
+    ]
+  }
+  """ |> Poison.decode!
+
+
+  test "sample operation passes" do
+    passes Operation, @operationbase
+  end
+
+  test "sample operation without required data fails" do
+    fails Operation, @operationbase |> Map.delete("responses")
+    fails Operation, @operationbase |> Map.delete("operationId") #note this is required by exaggerate
+  end
+
+  test "sample operation with optional data passes" do
+    passes Operation, @operationbase |> Map.delete("tags")
+    passes Operation, @operationbase |> Map.delete("summary")
+    passes Operation, @operationbase |> Map.delete("parameters")
+    passes Operation, @operationbase |> Map.delete("requestBody")
+    passes Operation, @operationbase |> Map.delete("security")
+  end
+
+  test "sample operation with scrambled type fails" do
+    fails Operation, @operationbase |> Map.put("responses",   %{"this is not" => "a responses map"})
+    fails Operation, @operationbase |> Map.put("responses",   "this is not a map")
+    fails Operation, @operationbase |> Map.put("operationId", %{"this is not" => "a string"})
+    fails Operation, @operationbase |> Map.put("tags",        "this is not a tags array")
+    fails Operation, @operationbase |> Map.put("summary",     %{"this is not" => "a string"})
+    fails Operation, @operationbase |> Map.put("responses",   [%{"this is not" => "a parameter array"}])
+    fails Operation, @operationbase |> Map.put("responses",   "this is not an array")
+    fails Operation, @operationbase |> Map.put("requestBody", %{"this is not" => "a requestbody object"})
+    fails Operation, @operationbase |> Map.put("requestBody", "this is not an object")
+    fails Operation, @operationbase |> Map.put("security",    %{"this is not" => "a security object"})
+    fails Operation, @operationbase |> Map.put("security",    "this is not an object")
+  end
+end
+
+defmodule ExaggerateExternalDocUnitTest do
+  use Validation.Helper
+  use ExUnit.Case
+
+  @externaldocbase """
+  {
+    "description": "Find more info here",
+    "url": "https://example.com"
+  }
+  """ |> Poison.decode!
+
+
+  test "sample externaldoc passes" do
+    passes Externaldocumentation, @externaldocbase
+  end
+
+  test "sample externaldoc without required data fails" do
+    fails Externaldocumentation, @externaldocbase |> Map.delete("url")
+  end
+
+  test "sample externaldoc with optional data passes" do
+    passes Externaldocumentation, @externaldocbase |> Map.delete("description")
+  end
+
+  test "sample externaldoc with scrambled type fails" do
+    fails Externaldocumentation, @externaldocbase |> Map.put("description",   %{"this is not" => "a string"})
+    fails Externaldocumentation, @externaldocbase |> Map.put("url", %{"this is not" => "a url"})
+  end
+end
+
+defmodule ExaggerateParamUnitTest do
+  use Validation.Helper
+  use ExUnit.Case
+
+  @integerheaderparambase """
+  {
+    "name": "token",
+    "in": "header",
+    "description": "token to be passed as a header",
+    "required": true,
+    "schema": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "format": "int64"
+      }
+    },
+    "style": "simple"
+  }
+  """ |> Poison.decode!
+
+
+  test "sample header parameter passes" do
+    passes Parameter, @integerheaderparambase
+  end
+
+  test "sample header parameter without required data fails" do
+    fails Parameter, @integerheaderparambase |> Map.delete("name")
+    fails Parameter, @integerheaderparambase |> Map.delete("in")
+  end
+
+  test "sample header parameter with optional data passes" do
+    passes Parameter, @integerheaderparambase |> Map.delete("description")
+    passes Parameter, @integerheaderparambase |> Map.delete("required")
+    passes Parameter, @integerheaderparambase |> Map.delete("schema")
+    passes Parameter, @integerheaderparambase |> Map.delete("style")
+  end
+
+  test "sample header parameter with scrambled types fails" do
+    fails Parameter, @integerheaderparambase |> Map.put("name", %{"this is not" => "a string"})
+    fails Parameter, @integerheaderparambase |> Map.put("in", %{"this is not" => "a string"})
+    fails Parameter, @integerheaderparambase |> Map.put("in", "qux")  #must be in the magic collection of values.
+    fails Parameter, @integerheaderparambase |> Map.put("description", %{"this is not" => "a string"})
+    fails Parameter, @integerheaderparambase |> Map.put("required", "this is not a boolean")
+    fails Parameter, @integerheaderparambase |> Map.put("schema", "this is not an object")
+    fails Parameter, @integerheaderparambase |> Map.put("schema", %{"this is not" => "a schema object"})
+  end
+
+  @stringpathparambase """
+  {
+    "name": "username",
+    "in": "path",
+    "description": "username to fetch",
+    "required": true,
+    "schema": {
+      "type": "string"
+    }
+  }
+  """ |> Poison.decode!
+
+  test "sample path parameter passes" do
+    passes Parameter, @stringpathparambase
+  end
+
+  test "sample path parameter without required data fails" do
+    fails Parameter, @stringpathparambase |> Map.delete("name")
+    fails Parameter, @stringpathparambase |> Map.delete("in")
+    fails Parameter, @stringpathparambase |> Map.delete("required")
+    fails Parameter, @stringpathparambase |> Map.put("required", false)
+  end
+
+  test "sample path parameter with optional data passes" do
+    passes Parameter, @stringpathparambase |> Map.delete("description")
+    passes Parameter, @stringpathparambase |> Map.delete("schema")
+  end
+end
+
+
+defmodule ExaggerateRequestBodyUnitTest do
+  use Validation.Helper
+  use ExUnit.Case
+
+  @requestbodybase """
+  {
+    "description": "user to add to the system",
+    "content": {
+      "application/json": {
+        "schema": {
+          "$ref": "#/components/schemas/User"
+        },
+        "examples": {
+            "user" : {
+              "summary": "User Example",
+              "externalValue": "http://foo.bar/examples/user-example.json"
+            }
+          }
+      },
+      "application/xml": {
+        "schema": {
+          "$ref": "#/components/schemas/User"
+        },
+        "examples": {
+            "user" : {
+              "summary": "User example in XML",
+              "externalValue": "http://foo.bar/examples/user-example.xml"
+            }
+          }
+      },
+      "text/plain": {
+        "examples": {
+          "user" : {
+              "summary": "User example in Plain text",
+              "externalValue": "http://foo.bar/examples/user-example.txt"
+          }
+        }
+      },
+      "*/*": {
+        "examples": {
+          "user" : {
+              "summary": "User example in other format",
+              "externalValue": "http://foo.bar/examples/user-example.whatever"
+          }
+        }
+      }
+    }
+  }
+  """ |> Poison.decode!
+
+
+  test "sample request body parameter passes" do
+    passes Requestbody, @requestbodybase
+  end
+
+  test "sample request body parameter without required data fails" do
+    fails Requestbody, @requestbodybase |> Map.delete("content")
+  end
+
+  test "sample request body parameter with optional data passes" do
+    passes Requestbody, @requestbodybase |> Map.delete("description")
+  end
+
+  test "sample request body parameter with scrambled types fails" do
+    fails Requestbody, @requestbodybase |> Map.put("content", "this is not a content object")
+    fails Requestbody, @requestbodybase |> Map.put("content", %{"this is not" => "a content object"})
+    fails Requestbody, @requestbodybase |> Map.put("description", %{"this is not" => "a string"})
+  end
+
+end
+
+defmodule ExaggerateMediatypeUnitTest do
+  use Validation.Helper
+  use ExUnit.Case
+
+  @mediatypebase """
+  {
+    "application/json": {
+      "schema": {
+           "$ref": "#/components/schemas/Pet"
+      },
+      "examples": {
+        "cat" : {
+          "summary": "An example of a cat",
+          "value":
+            {
+              "name": "Fluffy",
+              "petType": "Cat",
+              "color": "White",
+              "gender": "male",
+              "breed": "Persian"
+            }
+        },
+        "dog": {
+          "summary": "An example of a dog with a cat's name",
+          "value" :  {
+            "name": "Puma",
+            "petType": "Dog",
+            "color": "Black",
+            "gender": "Female",
+            "breed": "Mixed"
+          },
+        "frog": {
+            "$ref": "#/components/examples/frog-example"
+          }
+        }
+      }
+    }
+  }
+  """ |> Poison.decode!
+
+
+  test "sample mediatype parameter passes" do
+    passes Mediatype, @mediatypebase
+  end
+
+  test "sample mediatype parameter with optional data passes" do
+    passes Mediatype, @mediatypebase |> Map.delete("schema")
+    passes Mediatype, @mediatypebase |> Map.delete("examples")
+  end
+
+  test "sample mediatype parameter with scrambled types fails" do
+    fails Mediatype, @mediatypebase |> Map.put("schema", %{"this is" => "not a schema object"})
+    fails Mediatype, @mediatypebase |> Map.put("schema", "this is not an object")
+    fails Mediatype, @mediatypebase |> Map.put("examples", "this is not an array")
+    fails Mediatype, @mediatypebase |> Map.put("examples", [%{"this is not" => "an array of examples"}])
+  end
+
+end
+
+defmodule ExaggerateEncodingUnitTest do
+  use Validation.Helper
+  use ExUnit.Case
+
+  @encodingbase """
+  {
+    "contentType": "image/png, image/jpeg",
+    "headers": {
+      "X-Rate-Limit-Limit": {
+        "description": "The number of allowed requests in the current period",
+        "schema": {
+          "type": "integer"
+        }
+      }
+    }
+  }
+  """ |> Poison.decode!
+
+
+  test "sample encoding parameter passes" do
+    passes Encoding, @encodingbase
+  end
+
+  test "sample encoding parameter with optional data passes" do
+    passes Encoding, @encodingbase |> Map.delete("contentType")
+    passes Encoding, @encodingbase |> Map.delete("headers")
+  end
+
+  test "sample encoding parameter with scrambled types fails" do
+    fails Encoding, @encodingbase |> Map.put("contentType", %{"this is" => "not a string"})
+    fails Encoding, @encodingbase |> Map.put("contentType", "this is not a content-type list")
+    fails Encoding, @encodingbase |> Map.put("headers", %{"this is" => "not a headers object"})
+    fails Encoding, @encodingbase |> Map.put("headers", "this is not an object")
+  end
+end
+
+defmodule ExaggerateResponsesUnitTest do
+  use Validation.Helper
+  use ExUnit.Case
+
+  @responsesbase """
+  {
+    "200": {
+      "description": "a pet to be returned",
+      "content": {
+        "application/json": {
+          "schema": {
+            "$ref": "#/components/schemas/Pet"
+          }
+        }
+      }
+    },
+    "default": {
+      "description": "Unexpected error",
+      "content": {
+        "application/json": {
+          "schema": {
+            "$ref": "#/components/schemas/ErrorModel"
+          }
+        }
+      }
+    }
+  }
+  """ |> Poison.decode!
+
+
+  test "sample responses parameter passes" do
+    passes Responses, @responsesbase
+  end
+
+  test "sample responses parameter with bad key" do
+    resampled_parameter = @responsesbase["200"]
+    fails Responses, @responsesbase |> Map.put("foo", resampled_parameter)
+  end
+end
+
+defmodule ExaggerateResponseUnitTest do
+  use Validation.Helper
+  use ExUnit.Case
+
+  @responsebase """
+  {
+    "description": "A simple string response",
+    "content": {
+      "text/plain": {
+        "schema": {
+          "type": "string"
+        }
+      }
+    },
+    "headers": {
+      "X-Rate-Limit-Limit": {
+        "description": "The number of allowed requests in the current period",
+        "schema": {
+          "type": "integer"
+        }
+      },
+      "X-Rate-Limit-Remaining": {
+        "description": "The number of remaining requests in the current period",
+        "schema": {
+          "type": "integer"
+        }
+      },
+      "X-Rate-Limit-Reset": {
+        "description": "The number of seconds left in the current period",
+        "schema": {
+          "type": "integer"
+        }
+      }
+    }
+  }
+  """ |> Poison.decode!
+
+
+  test "sample response parameter passes" do
+    passes Response, @responsebase
+  end
+
+  test "sample response parameter without required data fails" do
+    fails Response, @responsebase |> Map.delete("description")
+  end
+
+  test "sample response parameter with optional data passes" do
+    passes Response, @responsebase |> Map.delete("content")
+    passes Response, @responsebase |> Map.delete("headers")
+  end
+
+  test "sample response parameter with scrambled types fails" do
+    fails Response, @responsebase |> Map.put("description", %{"this is " => "not a string"})
+    fails Response, @responsebase |> Map.put("content", "this is not an object")
+    fails Response, @responsebase |> Map.put("content", %{"this is" => "not a content object"})
+    fails Response, @responsebase |> Map.put("headers", "this is not an object")
+    fails Response, @responsebase |> Map.put("headers", %{"this is" => "not a headers object"})
+  end
+
 end

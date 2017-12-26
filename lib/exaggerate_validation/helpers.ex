@@ -154,34 +154,73 @@ defmodule Exaggerate.Validation.Helpers do
                     |> Enum.reduce(true, &Kernel.&&/2)
         if valid, do: :ok, else: {:error, __MODULE__, "parameter #{unquote(parameter)} contains non-string value"}
       end
+
+      def unquote(vfunc)(value) do
+        {:error, __MODULE__, "parameter #{unquote(parameter)} is not a list, got #{inspect value}."}
+      end
     end
   end
 
   defmacro map_parameter(parameter, module) do
     vfunc = validation_function_name(parameter)
     quote do
-      def unquote(vfunc)(map) when is_map(map), do: :ok
+      def unquote(vfunc)(map) when is_map(map) do
+        map |> Enum.map(fn {_key, value} -> Module.concat(Exaggerate.Validation, unquote(module)).validate(value) end)
+            |> Exaggerate.Validation.error_search
+      end
+      def unquote(vfunc)(value) do
+        {:error, __MODULE__, "parameter #{unquote(parameter)} is not a map, got #{inspect value}."}
+      end
     end
   end
 
   defmacro map_parameter(parameter, module, altmodule) do
     vfunc = validation_function_name(parameter)
     quote do
-      def unquote(vfunc)(map) when is_map(map), do: :ok
+      def unquote(vfunc)(map) when is_map(map) do
+        map |> Enum.map(fn {_key, value} -> Exaggerate.Validation.validation_or(
+                                              Module.concat(Exaggerate.Validation, unquote(module)).validate(value),
+                                              Module.concat(Exaggerate.Validation, unquote(altmodule)).validate(value),
+                                              {:error, __MODULE__, "parameter #{unquote(parameter)} does not match either #{inspect unquote(module)} or #{inspect unquote(altmodule)}, got #{inspect value}"})
+                        end)
+            |> Exaggerate.Validation.error_search
+      end
+
+      def unquote(vfunc)(value) do
+        {:error, __MODULE__, "parameter #{unquote(parameter)} is not a map, got #{inspect value}."}
+      end
     end
   end
 
   defmacro array_parameter(parameter, module) do
     vfunc = validation_function_name(parameter)
     quote do
-      def unquote(vfunc)(arr) when is_list(arr), do: :ok
+      def unquote(vfunc)(arr) when is_list(arr) do
+        arr |> Enum.map(fn value -> Module.concat(Exaggerate.Validation, unquote(module)).validate(value) end)
+            |> Exaggerate.Validation.error_search
+      end
+
+      def unquote(vfunc)(value) do
+        {:error, __MODULE__, "parameter #{unquote(parameter)} is not an list, got #{inspect value}."}
+      end
     end
   end
 
   defmacro array_parameter(parameter, module, altmodule) do
     vfunc = validation_function_name(parameter)
     quote do
-      def unquote(vfunc)(arr) when is_list(arr), do: :ok
+      def unquote(vfunc)(arr) when is_list(arr) do
+        arr |> Enum.map(fn value -> Exaggerate.Validation.validation_or(
+                                      Module.concat(Exaggerate.Validation, unquote(module)).validate(value),
+                                      Module.concat(Exaggerate.Validation, unquote(altmodule)).validate(value),
+                                      {:error, __MODULE__, "parameter #{unquote(parameter)} does not match either #{inspect unquote(module)} or #{inspect unquote(altmodule)}, got #{inspect value}"})
+                        end)
+            |> Exaggerate.Validation.error_search
+      end
+
+      def unquote(vfunc)(value) do
+        {:error, __MODULE__, "parameter #{unquote(parameter)} is not a list, got #{inspect value}."}
+      end
     end
   end
 
