@@ -221,7 +221,7 @@ defmodule Exaggerate.Validation.Parameter do
   def further_validation(%{"in" => "path", "required" => true}), do: :ok
   def further_validation(%{"in" => "path"}), do: {:error, Parameter, "path parameters must be required"}
   def further_validation(%{"in" => location}) when location in ["query", "header", "path", "cookie"], do: :ok
-  def further_validation(%{"in" => location}) when location in ["body", "formQuery"] do
+  def further_validation(%{"in" => location}) when location in ["body", "formData"] do
     Logger.warn("Swagger/OpenAPI 2.0 parameter location #{inspect location} support is being deprecated.")
     :ok
   end

@@ -1,9 +1,9 @@
 defmodule ExaggerateValidationComponentTest do
   use ExUnit.Case, async: true
+  import Exaggerate.Validation.Helpers
+
 
   defmodule OneReqParam do
-    import Exaggerate.Validation.Helpers
-
     validate_keys [:param],[]
     string_parameter :param
   end
@@ -15,8 +15,6 @@ defmodule ExaggerateValidationComponentTest do
   end
 
   defmodule TwoReqParam do
-    import Exaggerate.Validation.Helpers
-
     validate_keys [:param1, :param2],[]
     string_parameter :param1
     string_parameter :param2
@@ -30,8 +28,6 @@ defmodule ExaggerateValidationComponentTest do
   end
 
   defmodule OneOptParam do
-    import Exaggerate.Validation.Helpers
-
     validate_keys [],[:param]
     string_parameter :param
   end
@@ -42,8 +38,6 @@ defmodule ExaggerateValidationComponentTest do
   end
 
   defmodule FurtherParam do
-    import Exaggerate.Validation.Helpers
-
     validate_keys [:param],[]
     string_parameter :param
 
@@ -58,8 +52,6 @@ defmodule ExaggerateValidationComponentTest do
   end
 
   defmodule VersionParam do
-    import Exaggerate.Validation.Helpers
-
     validate_keys [:param], []
     version_parameter :param
   end
@@ -71,8 +63,6 @@ defmodule ExaggerateValidationComponentTest do
   end
 
   defmodule BooleanParam do
-    import Exaggerate.Validation.Helpers
-
     validate_keys [:param], []
     boolean_parameter :param
   end
@@ -84,8 +74,6 @@ defmodule ExaggerateValidationComponentTest do
   end
 
   defmodule UrlParam do
-    import Exaggerate.Validation.Helpers
-
     validate_keys [:param], []
     url_parameter :param
   end
