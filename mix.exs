@@ -20,6 +20,7 @@ defmodule Exaggerate.Mixfile do
 
   defp deps do
     [
+      {:httpoison, "~> 0.13", only: [:test]},
       {:poison, "~> 3.1"},
       {:plug, "~> 1.4"}
     ]

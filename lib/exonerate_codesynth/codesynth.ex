@@ -1,7 +1,13 @@
-defmodule Exonerate.Codesynth.FalseError do
-end
-
 defmodule Exonerate.Codesynth do
+
+  def buildmodulestring(modulename, schemaname, schema) do
+    """
+      defmodule #{modulename} do
+        #{fullvalidator(schemaname, schema)}
+      end
+    """ |> Code.format_string! |> Enum.join
+  end
+
 
   def additionalmethodstring(name, %{"additionalProperties" => map}) when is_map(map), do: Exonerate.Codesynth.fullvalidator("#{name}_additionals",map)
   def additionalmethodstring(_, _), do: ""
@@ -171,7 +177,7 @@ defmodule Exonerate.Codesynth do
 
   def jsontoelixir("string"), do: "binary"
   def jsontoelixir("integer"), do: "integer"
-  def jsontoelixir("number"), do: "float"
+  def jsontoelixir("number"), do: "number"
   def jsontoelixir("boolean"), do: "boolean"
   def jsontoelixir("object"), do: "map"
   def jsontoelixir("array"), do: "list"
