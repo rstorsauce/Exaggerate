@@ -136,9 +136,9 @@ defmodule Exonerate.Validation do
   parameter           "minItems",             :integer,           "array"
   parameter           "maxItems",             :integer,           "array"
 
+  #a couple of strange ones that don't fit into the dominant rubric:
   def validate_kv({"exclusiveMinimum", bool}, %{"minimum" => _}, _) when is_boolean(bool), do: :ok
   def validate_kv({"exclusiveMaximum", bool}, %{"maximum" => _}, _) when is_boolean(bool), do: :ok
-  #array
 
   #other keywords
   def validate_kv({"enum", enum_val}, _map, _) when is_list(enum_val)
@@ -147,8 +147,10 @@ defmodule Exonerate.Validation do
     :ok
   end
   def validate_kv({"enum", enum_val}, _map, _), do: {:error, "invalid enum #{enum_val}"}
-
   def validate_kv({k, _v}, _map, _), do: {:error, "unrecognized key #{inspect k}"}
+
+  ##############################################################################
+  ## specific, fallthrough validations:
 
   #fallthrough function on validate_properties
   def validate_properties(_parent, properties), do: Enum.map(properties, fn {_k,v} -> validate(v, false) end) |> error_reduction

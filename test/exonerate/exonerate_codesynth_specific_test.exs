@@ -3,8 +3,9 @@ defmodule ExonerateCodesynthSpecificTest.Helper do
     quote do
       get_route = unquote(map)
       get_code = unquote(code) |> Code.format_string! |> Enum.join
+      test_code = Exonerate.Codesynth.validator_string("test", get_route) |> Code.format_string! |> Enum.join
 
-      assert Exonerate.Codesynth.validator("test", get_route) == get_code
+      assert test_code == get_code
     end
   end
 end
@@ -17,17 +18,18 @@ defmodule ExonerateCodesynthSpecificTest do
   test "json schemas that don't specify array with array parameters build properly" do
     codesynth_match %{"items" => [%{}], "additionalItems" => %{"type" => "integer"}},
       """
-      def validate_test_0(_val), do: :ok
-      def validate_test_0(val), do: {:error, "\#{inspect(val)} does not conform to JSON schema"}
+      def validate_test__additionalItems(val) when is_integer(val), do: :ok
 
-      def validate_test_all(val) when is_list(val) do
-      val
-      |> Enum.zip(val, [&__MODULE__.validate_test_0/1])
-      |> Enum.map(fn {a, f} -> f.(a) end)
-      |> Exonerate.error_reduction()
+      def validate_test__additionalItems(val), do: {:error, "\#{inspect val} does not conform to JSON schema"}
+
+      def validate_test_0(val), do: :ok
+
+      def validate_test__all(val) do
+        check_additionalitems(val, [&__MODULE__.validate_test_0/1], &__MODULE__.validate_test__additionalItems/1)
       end
 
       def validate_test(val) when is_list(val), do: validate_test_all(val)
+
       def validate_test(val), do: :ok
       """
   end

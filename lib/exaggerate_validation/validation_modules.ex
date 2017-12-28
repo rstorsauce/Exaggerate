@@ -435,7 +435,8 @@ defmodule Exaggerate.Validation.Schema do
 
   use Exaggerate.Validation.Helpers
 
-  pass_validate()
+  def validate(_), do: :ok
+  #pass_validate()
 end
 
 defmodule Exaggerate.Validation.Discriminator do
