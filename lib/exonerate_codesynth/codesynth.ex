@@ -36,14 +36,6 @@ defmodule Exonerate.Codesynth do
   end
   def subschemastring(_,_), do: ""
 
-  def fullvalidator(n, v) do
-    vfn = validator(n, v)
-    sweep = """
-      def validate_#{n}(val), do: {:error, "\#{inspect val} does not conform to JSON schema"}
-    """
-    vfn <> "\n" <> sweep
-  end
-
   def subschema_calls(name, %{"properties" => map}) do
     map |> Enum.map(fn {k,v} ->
           "\"#{k}\" = k -> validate_#{name}_#{k}(v)"
@@ -175,21 +167,25 @@ defmodule Exonerate.Codesynth do
   def requiredstring(%{"required" => list}), do: Enum.map(list, fn s -> ~s("#{s}" => _) end) |> Enum.join(",") |> fn s -> "=%{#{s}}" end.()
   def requiredstring(_), do: ""
 
-  def jsontoelixir("string"), do: "binary"
-  def jsontoelixir("integer"), do: "integer"
-  def jsontoelixir("number"), do: "number"
-  def jsontoelixir("boolean"), do: "boolean"
-  def jsontoelixir("object"), do: "map"
-  def jsontoelixir("array"), do: "list"
+  def typeguard("string"), do: "is_binary(val)"
+  def typeguard("integer"), do: "is_integer(val)"
+  def typeguard("number"), do: "is_number(val)"
+  def typeguard("boolean"), do: "is_boolean(val)"
+  def typeguard("object"), do: "is_map(val)"
+  def typeguard("array"), do: "is_list(val)"
+  def typeguard("null"), do: "is_nil(val)"
+  def typeguard(arr) when is_list(arr), do: Enum.map(arr, &Exonerate.Codesynth.typeguard/1) |> Enum.join(" or ")
 
-  def validator(name, schema = %{"type" => jsontype}) when jsontype in ["string", "integer", "number", "boolean", "object", "array"] do
+  @valid_types ["string", "integer", "number", "boolean", "object", "array"]
+
+  def validator(name, schema = %{"type" => type}) when is_list(type) or (type in @valid_types) do
     """
       #{regexstring(name,schema)}
       #{additionalmethodstring(name, schema)}
       #{patternmethodstring(name, schema)}
       #{subschemastring(name, schema)}
       #{validateeachstring(name, schema)}
-      def validate_#{name}(val #{requiredstring(schema)}) when is_#{jsontoelixir(jsontype)}(val)#{guardstring(schema)}, do: #{bodystring(name, schema)}
+      def validate_#{name}(val #{requiredstring(schema)}) when #{typeguard(type)}#{guardstring(schema)}, do: #{bodystring(name, schema)}
     """ |> Code.format_string! |> Enum.join
   end
 
@@ -207,10 +203,14 @@ defmodule Exonerate.Codesynth do
     """ |> Code.format_string! |> Enum.join
   end
 
-  def validator(name, schema = %{}) do
-    """
-       def validate_#{name}(val), do: :ok
-    """ |> Code.format_string! |> Enum.join
+  #the finalizer decides whether or not we want to trap invalid schema elements.
+  #if a "type" specification has been made, then we do, if not, then the schema
+  #is permissive.
+  def finalizer(name, %{"type" => _}), do: "def validate_#{name}(val), do: {:error, \"\#{inspect val} does not conform to JSON schema\"}"
+  def finalizer(name, %{}), do: "def validate_#{name}(val), do: :ok"
+
+  def fullvalidator(name, schema) do
+    validator(name, schema) <> "\n" <> finalizer(name, schema)
   end
 
 end

@@ -8,14 +8,13 @@ defmodule Exaggerate.Mixfile do
       version: "0.1.0",
       elixir: "~> 1.6-dev",
       start_permanent: Mix.env == :prod,
-      deps: deps()
+      deps: deps(),
+      preferred_cli_env: [exoneratebuildtests: :test]
     ]
   end
 
   def application do
-    [
-      applications: [:logger],
-    ]
+    [ extra_applications: [:logger] ]
   end
 
   defp deps do
