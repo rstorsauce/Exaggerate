@@ -19,17 +19,15 @@ defmodule ExonerateCodesynthSpecificTest do
     codesynth_match %{"items" => [%{}], "additionalItems" => %{"type" => "integer"}},
       """
       def validate_test__additionalItems(val) when is_integer(val), do: :ok
-
       def validate_test__additionalItems(val), do: {:error, "\#{inspect val} does not conform to JSON schema"}
 
       def validate_test_0(val), do: :ok
 
       def validate_test__all(val) do
-        check_additionalitems(val, [&__MODULE__.validate_test_0/1], &__MODULE__.validate_test__additionalItems/1)
+        Exonerate.Checkers.check_additionalitems(val, [&__MODULE__.validate_test_0/1], &__MODULE__.validate_test__additionalItems/1)
       end
 
-      def validate_test(val) when is_list(val), do: validate_test_all(val)
-
+      def validate_test(val) when is_list(val), do: validate_test__all(val)
       def validate_test(val), do: :ok
       """
   end

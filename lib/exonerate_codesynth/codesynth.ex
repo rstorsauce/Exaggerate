@@ -44,6 +44,24 @@ defmodule Exonerate.Codesynth do
     """ |> Code.format_string! |> Enum.join
   end
 
+  #special case when we have minItems/maxItems in the array spec:
+
+  def validatorfn_string(name, schema = %{"minItems" => l}) do
+    "def validate_#{name}(val) when is_list(val) and length(val) < #{l}, do: {:error, \"\#{inspect val} does not conform to JSON schema\"}\n"
+      <> validatorfn_string(name, Map.delete(schema, "minItems"))
+  end
+
+  def validatorfn_string(name, schema = %{"maxItems" => l}) do
+    "def validate_#{name}(val) when is_list(val) and length(val) > #{l}, do: {:error, \"\#{inspect val} does not conform to JSON schema\"}\n"
+      <> validatorfn_string(name, Map.delete(schema, "maxItems"))
+  end
+
+  def validatorfn_string(name, schema = %{"additionalItems" => false, "items" => array}) when is_list(array) do
+    l = length(array)
+    "def validate_#{name}(val) when is_list(val) and length(val) > #{l}, do: {:error, \"\#{inspect val} does not conform to JSON schema\"}\n"
+      <> validatorfn_string(name, Map.delete(schema, "additionalItems"))
+  end
+
   #these three cases are when there's type information; they pass to the triplet definition.
   def validatorfn_string(name, schema = %{"type" => type}) when is_binary(type) do
     validatorfn_string(name, schema, type)
@@ -59,9 +77,7 @@ defmodule Exonerate.Codesynth do
 
   ## the triplet type actually passes critical type information on to subcomponents
   def validatorfn_string(name, schema, type) do
-    """
-       def validate_#{name}(val #{requiredstring(schema, type)}) #{guardstring(schema, type)}, do: #{bodystring(name, schema, type)}
-    """
+    "def validate_#{name}(val #{requiredstring(schema, type)}) #{guardstring(schema, type)}, do: #{bodystring(name, schema, type)}"
   end
 
   # the finalizer decides whether or not we want to trap invalid schema elements.
@@ -135,12 +151,17 @@ defmodule Exonerate.Codesynth do
   # intended to be called as a result of a Enum.map in the main validator function
   # note that maps map over {k, v} and lists map over {v}.
 
+  def simpleobject(%{"additionalProperties" => _}), do: false
+  def simpleobject(%{"patternProperties" => _}), do: false
+  def simpleobject(%{"properties" => p}), do: (p |> Map.keys |> length) <= 1
+  def simpleobject(_), do: true
+
   def validateeachstring(name, map = %{"type" => "array", "items" => list, "additionalItems" => schema}) when is_list(list) and is_map(schema) do
     itemvalidationarray = 0..(length(list) - 1)  |> Enum.map( fn i -> "&__MODULE__.validate_#{name}_#{i}/1" end)
                                                  |> Enum.join(",")
     """
       def validate_#{name}__all(val) do
-        check_additionalitems(val, [#{itemvalidationarray}], &__MODULE__.validate_#{name}__additionalItems/1)
+        Exonerate.Checkers.check_additionalitems(val, [#{itemvalidationarray}], &__MODULE__.validate_#{name}__additionalItems/1)
       end
     """
   end
@@ -150,16 +171,15 @@ defmodule Exonerate.Codesynth do
                                                  |> Enum.join(",")
     """
       def validate_#{name}__all(val) do
-        val |> Enum.zip(val, [#{itemvalidationarray}])
+        val |> Enum.zip([#{itemvalidationarray}])
             |> Enum.map(fn {a, f} -> f.(a) end)
             |> Exonerate.error_reduction
       end
     """
   end
-  def validateeachstring(name, map = %{"type" => "array", "items" => schema}) when is_map(schema), do: validator_string("each_#{name}", schema)
+  def validateeachstring(name, map = %{"type" => "array", "items" => schema}) when is_map(schema), do: validator_string("#{name}__forall", schema)
   def validateeachstring(name, map = %{"type" => "object"}) do
-    default_calls = if (map["additionalProperties"] == false), do: {}
-    if simpleobject(map, "object") do
+    if (simpleobject(map)) do
       ""
     else
       """
@@ -213,13 +233,13 @@ defmodule Exonerate.Codesynth do
   ## validator function subcomponents
   ##
 
-  def simpleobject(%{"items" => items}, "array") when is_map(items),  do: false
-  def simpleobject(%{"items" => items}, "array") when is_list(items), do: true
-
-  def simpleobject(map, "object"), do: (!Map.has_key?(map, "properties") || (map["properties"] |> Map.keys |> length <= 1))
-                                                        && (!Map.has_key?(map, "additionalProperties"))
-                                                        && (!Map.has_key?(map, "patternProperties"))
-  def simpleobject(_,_), do: true
+  def mappingfn(name, %{"patternProperties" => _}, "object"), do: "Enum.map(val, &__MODULE__.validate_#{name}__each/1)"
+  def mappingfn(name, %{"additionalProperties" => _}, "object"), do: "Enum.map(val, &__MODULE__.validate_#{name}__each/1)"
+  def mappingfn(name, %{"properties" => prop}, "object") do
+    if length(Map.keys(prop)) > 1, do: "Enum.map(val, &__MODULE__.validate_#{name}__each/1)", else: nil
+  end
+  def mappingfn(name, %{"items" => schema}, "array") when is_map(schema), do: "Enum.map(val, &__MODULE__.validate_#{name}__forall/1)"
+  def mappingfn(_,_,_), do: nil
 
   #assemble a guard string.
   def guardstring(spec, type), do: guards(spec, type) |> guardproc(type)
@@ -244,22 +264,17 @@ defmodule Exonerate.Codesynth do
   def guards(spec = %{"minimum" => v}, type) when type in ["integer","number"],    do: ["(val >= #{v})" |         guards(Map.delete(spec, "minimum"), type)]
   def guards(spec = %{"maximum" => v}, type) when type in ["integer","number"],    do: ["(val <= #{v})" |         guards(Map.delete(spec, "maximum"), type)]
 
-  def guards(spec = %{"additionalItems" => false, "items" => array}, "array") when is_list(array) do
-    ["(length(val) <= #{length(array)})" | guards(spec |> Map.delete("additionalItems"), "array")]
-  end
-  def guards(spec = %{"minItems" => l}, "array"),   do: ["(length(val) >= #{l})" | guards(Map.delete(spec, "minItems"), "array")]
-  def guards(spec = %{"maxItems" => l}, "array"),   do: ["(length(val) <= #{l})" | guards(Map.delete(spec, "maxItems"), "array")]
   def guards(_,_), do: []
 
   @fmt_map %{"date-time" => "datetime", "email" => "email", "hostname" => "hostname", "ipv4" => "ipv4", "ipv6" => "ipv6", "uri" => "uri"}
 
-  def bodystring(name, schema, type), do: bodyproc(name, bodyfns(name, schema, type), simpleobject(schema, type))
-  def bodyproc(name, [], true), do: ":ok"
-  def bodyproc(name, [], false), do: "Enum.map(val, &__MODULE__.validate_each_#{name}/1) |> Exonerate.error_reduction"
-  def bodyproc(name, [singleton], true), do: singleton
-  def bodyproc(name, [singleton], false), do: "[#{singleton} | Enum.map(val, &__MODULE__.validate_each_#{name}/1)] |> Exonerate.error_reduction"
-  def bodyproc(name, arr, true), do: "[" <> Enum.join(arr, ",") <> "] |> Exonerate.error_reduction"
-  def bodyproc(name, arr, false), do: "([" <> Enum.join(arr, ",") <> "] ++ Enum.map(val, &__MODULE__.validate_each_#{name}/1)) |> Exonerate.error_reduction"
+  def bodystring(name, schema, type), do: bodyproc(name, bodyfns(name, schema, type), mappingfn(name, schema, type))
+  def bodyproc(name, [], nil), do: ":ok"
+  def bodyproc(name, [], mapfn), do: "#{mapfn} |> Exonerate.error_reduction"
+  def bodyproc(name, [singleton], nil), do: singleton
+  def bodyproc(name, [singleton], mapfn), do: "[#{singleton} | #{mapfn}] |> Exonerate.error_reduction"
+  def bodyproc(name, arr, nil), do: "[" <> Enum.join(arr, ",") <> "] |> Exonerate.error_reduction"
+  def bodyproc(name, arr, mapfn), do: "([" <> Enum.join(arr, ",") <> "] ++ #{mapfn}) |> Exonerate.error_reduction"
 
   #some things can't be in guards, so we put them in bodies:
   def bodyfns(name, spec = %{"pattern" => _p}, "string"), do:      ["check_regex(@regex_pattern_#{name}, val)" | bodyfns(name, Map.delete(spec, "pattern"), "string")]
@@ -273,14 +288,14 @@ defmodule Exonerate.Codesynth do
   end
 
   def bodyfns(name, spec = %{"properties" => p}, "object") do
-    if (p |> Map.keys |> length == 1) && (simpleobject(spec, "object")) do
+    if (p |> Map.keys |> length == 1) && simpleobject(spec) do
       (p |> Enum.map(fn {k, v} -> "validate_#{name}_#{k}(val[\"#{k}\"])" end)) ++ bodyfns(name, Map.delete(spec, "properties"), "object")
     else
       bodyfns(name, Map.delete(spec, "properties"), "object")
     end
   end
   def bodyfns(name, spec = %{"uniqueItems" => true}, "array"), do: ["is_unique(val)" | bodyfns(name, Map.delete(spec, "uniqueItems"), "array")]
-  def bodyfns(name, spec = %{"items" => list}, "array") when is_list(list) and length(list) > 0, do: ["validate_test_all(val)" | bodyfns(name, Map.delete(spec, "items"), "array")]
+  def bodyfns(name, spec = %{"items" => list}, "array") when is_list(list) and length(list) > 0, do: ["validate_#{name}__all(val)" | bodyfns(name, Map.delete(spec, "items"), "array")]
   def bodyfns(_name, _, _), do: []
 
   #one last special sugar for objects

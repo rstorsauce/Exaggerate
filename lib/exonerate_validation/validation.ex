@@ -158,7 +158,10 @@ defmodule Exonerate.Validation do
   #fallthrough function on additional_properties:  can either be boolean or a valid schema
   def validate_additionalProperties(%{"properties" => _}, ap) when is_boolean(ap), do: :ok
   def validate_additionalProperties(%{"properties" => _}, ap),                     do: validate(ap, false)
-  def validate_additionalProperties(parent, _),                                     do: {:error, "additionalProperties requires properties, missing in #{inspect parent}"}
+  def validate_additionalProperties(parent, _) do
+    Logger.warn("additionalProperties wants a properties object, missing in #{inspect parent}")
+    :ok
+  end
 
   #fallthrough function for required properties checks that everything in the required list appears in the properties map.
   def validate_required(parent = %{"properties" => props}, req) do
@@ -183,6 +186,9 @@ defmodule Exonerate.Validation do
 
   def validate_additionalItems(%{"items" => list}, val) when is_list(list) and is_boolean(val), do: :ok
   def validate_additionalItems(%{"items" => list}, val) when is_list(list) and is_map(val), do: validate(val, false)
-  def validate_additionalItems(parent, _val), do: {:error, "aditionalitems needs a bounded items list: #{inspect parent}"}
+  def validate_additionalItems(parent, _val) do
+    Logger.warn("aditionalitems wants a bounded item schema array, missing in #{inspect parent}")
+    :ok
+  end
 
 end

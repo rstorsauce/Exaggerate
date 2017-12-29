@@ -4,7 +4,7 @@ defmodule Mix.Tasks.Exoneratebuildtests do
   @rootdir  File.cwd!
   @testsdir  "test/JSONSchematests"
   @remoteroot "https://raw.githubusercontent.com/json-schema-org/JSON-Schema-Test-Suite/master/tests/draft4/"
-  @tests ["additionalItems"]#, "additionalProperties", "allOf", "anyOf"]
+  @tests ["additionalItems", "additionalProperties"]#, "allOf", "anyOf"]
 
   def fetch_file(suite) do
     #generate the full uri from the suite name.
@@ -32,7 +32,7 @@ defmodule Mix.Tasks.Exoneratebuildtests do
        {:error, error} -> raise("error, #{inspect schema} appears to be invalid, throws #{error}")
     end
 
-    schemacode = Exonerate.Codesynth.fullvalidator("test#{idx}", schema)
+    schemacode = Exonerate.Codesynth.validator_string("test#{idx}", schema)
 
     testcode = tests |> Enum.map(&__MODULE__.singletest(&1, "validate_test#{idx}"))
                      |> Enum.join("\n")
