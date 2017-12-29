@@ -2,9 +2,10 @@ defmodule ExonerateCodesynthBasicTest.Helper do
   defmacro codesynth_match(map, code) do
     quote do
       get_route = unquote(map)
-      get_code = unquote(code) |> Code.format_string! |> Enum.join
-      test_code = Exonerate.Codesynth.validator_string("test", get_route) |> Code.format_string! |> Enum.join
-
+      IO.puts("==================")
+      get_code = unquote(code) |> IO.inspect |> Code.format_string! |> Enum.join
+      IO.puts("---------------------------")
+      test_code = Exonerate.Codesynth.validator_string("test", get_route) |> IO.inspect |> Code.format_string! |> Enum.join
       assert test_code == get_code
     end
   end
@@ -30,23 +31,23 @@ defmodule ExonerateCodesynthBasicTest do
 
     codesynth_match %{"type" => "string", "minLength" => 3, "maxLength" => 5},
       """
-        def validate_test(val) when is_binary(val) and length(val) >= 3 and length(val) <= 5, do: :ok
+        def validate_test(val) when is_binary(val), do: [Exonerate.Checkers.check_minlength(val, 3), Exonerate.Checkers.check_maxlength(val, 5)] |> Exonerate.error_reduction()
         def validate_test(val), do: {:error, \"\#{inspect(val)} does not conform to JSON schema\"}
       """
 
-    codesynth_match %{"type" => "string", "minLength" => 3, "pattern" => "test"},
+    codesynth_match %{"type" => "string", "pattern" => "test"},
       """
-        @pattern_test Regex.compile("test")
+        @pattern_test Regex.compile("test") |> elem(1)
 
-        def validate_test(val) when is_binary(val) and length(val) >= 3, do: check_regex(@regex_pattern_test, val)
+        def validate_test(val) when is_binary(val), do: Exonerate.Checkers.check_regex(@pattern_test, val)
         def validate_test(val), do: {:error, \"\#{inspect(val)} does not conform to JSON schema\"}
       """
 
     codesynth_match %{"type" => "string", "minLength" => 3, "pattern" => "test", "format" => "uri"},
       """
-        @pattern_test Regex.compile("test")
+        @pattern_test Regex.compile("test") |> elem(1)
 
-        def validate_test(val) when is_binary(val) and length(val) >= 3, do: [check_regex(@regex_pattern_test, val), check_format_uri(val)] |> Exonerate.error_reduction
+        def validate_test(val) when is_binary(val), do: [Exonerate.Checkers.check_regex(@pattern_test, val), Exonerate.Checkers.check_format_uri(val), Exonerate.Checkers.check_minlength(val, 3)] |> Exonerate.error_reduction
         def validate_test(val), do: {:error, \"\#{inspect(val)} does not conform to JSON schema\"}
       """
   end
@@ -60,22 +61,29 @@ defmodule ExonerateCodesynthBasicTest do
       """
     codesynth_match %{"type" => "integer", "multipleOf" => 3},
       """
-        def validate_test(val) when is_integer(val) and (rem(val,3) == 0), do: :ok
+        def validate_test(val) when is_integer(val) and (rem(val,3) != 0), do: {:error, \"\#{inspect(val)} does not conform to JSON schema\"}
+        def validate_test(val) when is_integer(val), do: :ok
         def validate_test(val), do: {:error, \"\#{inspect(val)} does not conform to JSON schema\"}
       """
     codesynth_match %{"type" => "integer", "multipleOf" => 3, "minimum" => 3},
       """
-        def validate_test(val) when is_integer(val) and (rem(val,3) == 0) and (val >= 3), do: :ok
+        def validate_test(val) when is_integer(val) and (rem(val,3) != 0), do: {:error, \"\#{inspect(val)} does not conform to JSON schema\"}
+        def validate_test(val) when is_integer(val) and (val < 3), do: {:error, \"\#{inspect(val)} does not conform to JSON schema\"}
+        def validate_test(val) when is_integer(val), do: :ok
         def validate_test(val), do: {:error, \"\#{inspect(val)} does not conform to JSON schema\"}
       """
     codesynth_match %{"type" => "integer", "minimum" => 3, "maximum" => 7},
       """
-        def validate_test(val) when is_integer(val) and (val >= 3) and (val <= 7), do: :ok
+        def validate_test(val) when is_integer(val) and (val < 3), do: {:error, \"\#{inspect(val)} does not conform to JSON schema\"}
+        def validate_test(val) when is_integer(val) and (val > 7), do: {:error, \"\#{inspect(val)} does not conform to JSON schema\"}
+        def validate_test(val) when is_integer(val), do: :ok
         def validate_test(val), do: {:error, \"\#{inspect(val)} does not conform to JSON schema\"}
       """
     codesynth_match %{"type" => "integer", "minimum" => 3, "exclusiveMinimum" => true, "maximum" => 7},
       """
-        def validate_test(val) when is_integer(val) and (val > 3) and (val <= 7), do: :ok
+        def validate_test(val) when is_integer(val) and (val <= 3), do: {:error, \"\#{inspect(val)} does not conform to JSON schema\"}
+        def validate_test(val) when is_integer(val) and (val > 7), do: {:error, \"\#{inspect(val)} does not conform to JSON schema\"}
+        def validate_test(val) when is_integer(val), do: :ok
         def validate_test(val), do: {:error, \"\#{inspect(val)} does not conform to JSON schema\"}
       """
   end
@@ -124,11 +132,12 @@ defmodule ExonerateCodesynthBasicTest do
       def validate_test_test2(val), do: {:error, "\#{inspect val} does not conform to JSON schema"}
 
       def validate_test__each({k, v}) do
-        cond do
-          "test1" = k -> validate_test_test1(v)
-          "test2" = k -> validate_test_test2(v)
-          true -> :ok
-        end
+        qmatch =
+         case k do
+           "test1" -> validate_test_test1(v)
+           "test2" -> validate_test_test2(v)
+           _ -> :ok
+         end
       end
 
       def validate_test(val) when is_map(val), do: Enum.map(val, &__MODULE__.validate_test__each/1) |> Exonerate.error_reduction
@@ -141,10 +150,13 @@ defmodule ExonerateCodesynthBasicTest do
       def validate_test_test1(val), do: {:error, "\#{inspect val} does not conform to JSON schema"}
 
       def validate_test__each({k, v}) do
-        cond do
-          "test1" = k -> validate_test_test1(v)
-          true -> {:error, "extra property \#{k} found"}
+        qmatch = case k do
+          "test1" -> {validate_test_test1(v), true}
+          _ -> {:ok, false}
         end
+
+        {result, matched} = qmatch
+        if matched, do: result, else: {:error, \"does not conform to JSON schema\"}
       end
 
       def validate_test(val) when is_map(val), do: Enum.map(val, &__MODULE__.validate_test__each/1) |> Exonerate.error_reduction
@@ -160,10 +172,14 @@ defmodule ExonerateCodesynthBasicTest do
       def validate_test_test1(val), do: {:error, "\#{inspect val} does not conform to JSON schema"}
 
       def validate_test__each({k, v}) do
-        cond do
-          "test1" = k -> validate_test_test1(v)
-          true -> validate_test__additionalProperties(v)
+        qmatch = case k do
+          "test1" -> {validate_test_test1(v), true}
+          _ -> {:ok, false}
         end
+
+        {result, matched} = qmatch
+        if matched, do: result, else: validate_test__additionalProperties(v)
+
       end
 
       def validate_test(val) when is_map(val), do: Enum.map(val, &__MODULE__.validate_test__each/1) |> Exonerate.error_reduction
@@ -179,10 +195,10 @@ defmodule ExonerateCodesynthBasicTest do
       def validate_test_test2(val), do: {:error, "\#{inspect val} does not conform to JSON schema"}
 
       def validate_test__each({k, v}) do
-        cond do
-          "test1" = k -> validate_test_test1(v)
-          "test2" = k -> validate_test_test2(v)
-          true -> :ok
+        qmatch = case k do
+          "test1" -> validate_test_test1(v)
+          "test2" -> validate_test_test2(v)
+          _ -> :ok
         end
       end
 
@@ -192,7 +208,7 @@ defmodule ExonerateCodesynthBasicTest do
 
     codesynth_match %{"type" => "object", "minProperties" => 3, "maxProperties" => 5},
     """
-      def validate_test(val) when is_map(val), do: [check_minproperties(val, 3), check_maxproperties(val, 5)] |> Exonerate.error_reduction
+      def validate_test(val) when is_map(val), do: [Exonerate.Checkers.check_minproperties(val, 3), Exonerate.Checkers.check_maxproperties(val, 5)] |> Exonerate.error_reduction
       def validate_test(val), do: {:error, \"\#{inspect(val)} does not conform to JSON schema\"}
     """
 
@@ -205,10 +221,10 @@ defmodule ExonerateCodesynthBasicTest do
       def validate_test_test2(val), do: {:error, "\#{inspect val} does not conform to JSON schema"}
 
       def validate_test__each({k, v}) do
-        cond do
-          "test1" = k -> validate_test_test1(v)
-          "test2" = k -> validate_test_test2(v)
-          true -> :ok
+        qmatch = case k do
+          "test1" -> validate_test_test1(v)
+          "test2" -> validate_test_test2(v)
+          _ -> :ok
         end
       end
 
@@ -218,7 +234,7 @@ defmodule ExonerateCodesynthBasicTest do
 
     codesynth_match %{"type" => "object", "properties" => %{"test1" => %{"type" => "string"}}, "patternProperties" => %{"testp" => %{"type" => "integer"}}},
     """
-      @patternprop_test_0 Regex.compile("testp")
+      @patternprop_test_0 Regex.compile("testp") |> elem(1)
 
       def validate_test__pattern_0(val) when is_integer(val), do: :ok
       def validate_test__pattern_0(val), do: {:error, "\#{inspect val} does not conform to JSON schema"}
@@ -227,11 +243,15 @@ defmodule ExonerateCodesynthBasicTest do
       def validate_test_test1(val), do: {:error, "\#{inspect val} does not conform to JSON schema"}
 
       def validate_test__each({k, v}) do
-        cond do
-          "test1" = k -> validate_test_test1(v)
-          Regex.match?(k, @patternprop_test_0) -> validate_test__pattern_0(v)
-          true -> :ok
+        pmatch = if Regex.match?(@patternprop_test_0, k), do: validate_test__pattern_0(v), else: :ok
+
+        qmatch = case k do
+          "test1" -> validate_test_test1(v)
+          _ -> :ok
         end
+
+        [qmatch, pmatch] |> Exonerate.error_reduction()
+
       end
 
       def validate_test(val) when is_map(val), do: Enum.map(val, &__MODULE__.validate_test__each/1) |> Exonerate.error_reduction
@@ -241,7 +261,7 @@ defmodule ExonerateCodesynthBasicTest do
     #test collision between extra parameter restrictions and regex patterns
     codesynth_match %{"type" => "object", "properties" => %{"test1" => %{"type" => "string"}}, "additionalProperties" => false, "patternProperties" => %{"testp" => %{"type" => "integer"}}},
     """
-      @patternprop_test_0 Regex.compile("testp")
+      @patternprop_test_0 Regex.compile("testp") |> elem(1)
 
       def validate_test__pattern_0(val) when is_integer(val), do: :ok
       def validate_test__pattern_0(val), do: {:error, "\#{inspect val} does not conform to JSON schema"}
@@ -250,11 +270,16 @@ defmodule ExonerateCodesynthBasicTest do
       def validate_test_test1(val), do: {:error, "\#{inspect val} does not conform to JSON schema"}
 
       def validate_test__each({k, v}) do
-        cond do
-          "test1" = k -> validate_test_test1(v)
-          Regex.match?(k, @patternprop_test_0) -> validate_test__pattern_0(v)
-          true -> {:error, "extra property \#{k} found"}
+        pmatch = if Regex.match?(@patternprop_test_0, k), do: {validate_test__pattern_0(v), true}, else: {:ok, false}
+
+        qmatch = case k do
+          "test1" -> {validate_test_test1(v), true}
+          _ -> {:ok, false}
         end
+
+        {result, matched} = [qmatch, pmatch] |> Enum.unzip()
+
+        if Enum.any?(matched), do: result |> Exonerate.error_reduction(), else: {:error, "does not conform to JSON schema"}
       end
 
       def validate_test(val) when is_map(val), do: Enum.map(val, &__MODULE__.validate_test__each/1) |> Exonerate.error_reduction
@@ -264,7 +289,7 @@ defmodule ExonerateCodesynthBasicTest do
     #test collision between specified extra parameters and regex patterns
     codesynth_match %{"type" => "object", "properties" => %{"test1" => %{"type" => "string"}}, "additionalProperties" => %{"type" => "integer"}, "patternProperties" => %{"testp" => %{"type" => "integer"}}},
     """
-      @patternprop_test_0 Regex.compile("testp")
+      @patternprop_test_0 Regex.compile("testp") |> elem(1)
 
       def validate_test__additionalProperties(val) when is_integer(val), do: :ok
       def validate_test__additionalProperties(val), do: {:error, "\#{inspect val} does not conform to JSON schema"}
@@ -276,11 +301,16 @@ defmodule ExonerateCodesynthBasicTest do
       def validate_test_test1(val), do: {:error, "\#{inspect val} does not conform to JSON schema"}
 
       def validate_test__each({k, v}) do
-        cond do
-          "test1" = k -> validate_test_test1(v)
-          Regex.match?(k, @patternprop_test_0) -> validate_test__pattern_0(v)
-          true -> validate_test__additionalProperties(v)
+        pmatch = if Regex.match?(@patternprop_test_0, k), do: {validate_test__pattern_0(v), true}, else: {:ok, false}
+
+        qmatch = case k do
+          "test1" -> {validate_test_test1(v), true}
+          _ -> {:ok, false}
         end
+
+        {result, matched} = [qmatch, pmatch] |> Enum.unzip()
+
+        if Enum.any?(matched), do: result |> Exonerate.error_reduction(), else: validate_test__additionalProperties(v)
       end
 
       def validate_test(val) when is_map(val), do: Enum.map(val, &__MODULE__.validate_test__each/1) |> Exonerate.error_reduction

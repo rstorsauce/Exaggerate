@@ -46,6 +46,142 @@ defmodule Exonerate.Codesynth do
 
   #special case when we have minItems/maxItems in the array spec:
 
+
+  def validatorfn_string(name, schema = %{"multipleOf" => v, "type" => "integer"}) do
+    "def validate_#{name}(val) when is_integer(val) and (rem(val,#{v}) != 0), do: {:error, \"\#{inspect val} does not conform to JSON schema\"}\n"
+      <> validatorfn_string(name, Map.delete(schema, "multipleOf"))
+  end
+
+  def validatorfn_string(name, schema = %{"multipleOf" => v, "type" => "number"}) do
+    "def validate_#{name}(val) when is_integer(val) and (rem(val,#{v}) != 0), do: {:error, \"\#{inspect val} does not conform to JSON schema\"}\n"
+      <> validatorfn_string(name, Map.delete(schema, "multipleOf"))
+  end
+
+  def validatorfn_string(name, schema = %{"multipleOf" => v, "type" => typelist}) when is_list(typelist) do
+    if ("number" in typelist) || ("integer" in typelist) do
+      "def validate_#{name}(val) when is_integer(val) and (rem(val,#{v}) != 0), do: {:error, \"\#{inspect val} does not conform to JSON schema\"}\n"
+        <> validatorfn_string(name, Map.delete(schema, "minimum"))
+    else
+      validatorfn_string(name, Map.delete(schema, "minimum"))
+    end
+  end
+
+  def validatorfn_string(name, schema = %{"multipleOf" => v}) do
+    "def validate_#{name}(val) when is_integer(val) and (rem(val,#{v}) != 0), do: {:error, \"\#{inspect val} does not conform to JSON schema\"}\n"
+      <> validatorfn_string(name, Map.delete(schema, "minimum"))
+  end
+
+
+  ##############################################################################
+
+  def validatorfn_string(name, schema = %{"minimum" => v, "exclusiveMinimum" => true, "type" => "integer"}) do
+    "def validate_#{name}(val) when is_integer(val) and val <= #{v}, do: {:error, \"\#{inspect val} does not conform to JSON schema\"}\n"
+      <> validatorfn_string(name, Map.delete(schema, "minimum"))
+  end
+
+  def validatorfn_string(name, schema = %{"minimum" => v, "exclusiveMinimum" => true, "type" => "number"}) do
+    "def validate_#{name}(val) when is_number(val) and val <= #{v}, do: {:error, \"\#{inspect val} does not conform to JSON schema\"}\n"
+      <> validatorfn_string(name, Map.delete(schema, "minimum"))
+  end
+
+  def validatorfn_string(name, schema = %{"minimum" => v, "exclusiveMinimum" => true, "type" => typelist}) when is_list(typelist) do
+    cond do
+      "number"  in typelist -> "def validate_#{name}(val) when is_number(val) and val <= #{v}, do: {:error, \"\#{inspect val} does not conform to JSON schema\"}\n"
+                                <> validatorfn_string(name, Map.delete(schema, "minimum"))
+      "integer" in typelist -> "def validate_#{name}(val) when is_integer(val) and val <= #{v}, do: {:error, \"\#{inspect val} does not conform to JSON schema\"}\n"
+                                <> validatorfn_string(name, Map.delete(schema, "minimum"))
+      true ->                      validatorfn_string(name, Map.delete(schema, "minimum"))
+    end
+  end
+
+  def validatorfn_string(name, schema = %{"minimum" => v, "exclusiveMinimum" => true}) do
+    "def validate_#{name}(val) when is_number(val) and val <= #{v}, do: {:error, \"\#{inspect val} does not conform to JSON schema\"}\n"
+      <> validatorfn_string(name, Map.delete(schema, "minimum"))
+  end
+
+  ##############################################################################
+
+  def validatorfn_string(name, schema = %{"maximum" => v, "exclusiveMaximum" => true, "type" => "integer"}) do
+    "def validate_#{name}(val) when is_integer(val) and val >= #{v}, do: {:error, \"\#{inspect val} does not conform to JSON schema\"}\n"
+      <> validatorfn_string(name, Map.delete(schema, "maximum"))
+  end
+
+  def validatorfn_string(name, schema = %{"maximum" => v, "exclusiveMaximum" => true, "type" => "number"}) do
+    "def validate_#{name}(val) when is_number(val) and val >= #{v}, do: {:error, \"\#{inspect val} does not conform to JSON schema\"}\n"
+      <> validatorfn_string(name, Map.delete(schema, "maximum"))
+  end
+
+  def validatorfn_string(name, schema = %{"maximum" => v, "exclusiveMaximum" => true, "type" => typelist}) when is_list(typelist) do
+    cond do
+      "number"  in typelist -> "def validate_#{name}(val) when is_number(val) and val >= #{v}, do: {:error, \"\#{inspect val} does not conform to JSON schema\"}\n"
+                                <> validatorfn_string(name, Map.delete(schema, "maximum"))
+      "integer" in typelist -> "def validate_#{name}(val) when is_integer(val) and val >= #{v}, do: {:error, \"\#{inspect val} does not conform to JSON schema\"}\n"
+                                <> validatorfn_string(name, Map.delete(schema, "maximum"))
+      true ->                      validatorfn_string(name, Map.delete(schema, "maximum"))
+    end
+  end
+
+  def validatorfn_string(name, schema = %{"maximum" => v, "exclusiveMaximum" => true}) do
+    "def validate_#{name}(val) when is_number(val) and val >= #{v}, do: {:error, \"\#{inspect val} does not conform to JSON schema\"}\n"
+      <> validatorfn_string(name, Map.delete(schema, "maximum"))
+  end
+
+  ##############################################################################
+
+  def validatorfn_string(name, schema = %{"minimum" => v, "type" => "integer"}) do
+    "def validate_#{name}(val) when is_integer(val) and val < #{v}, do: {:error, \"\#{inspect val} does not conform to JSON schema\"}\n"
+      <> validatorfn_string(name, Map.delete(schema, "minimum"))
+  end
+
+  def validatorfn_string(name, schema = %{"minimum" => v, "type" => "number"}) do
+    "def validate_#{name}(val) when is_number(val) and val < #{v}, do: {:error, \"\#{inspect val} does not conform to JSON schema\"}\n"
+      <> validatorfn_string(name, Map.delete(schema, "minimum"))
+  end
+
+  def validatorfn_string(name, schema = %{"minimum" => v, "type" => typelist}) when is_list(typelist) do
+    cond do
+      "number"  in typelist -> "def validate_#{name}(val) when is_number(val) and val < #{v}, do: {:error, \"\#{inspect val} does not conform to JSON schema\"}\n"
+                                <> validatorfn_string(name, Map.delete(schema, "minimum"))
+      "integer" in typelist -> "def validate_#{name}(val) when is_integer(val) and val < #{v}, do: {:error, \"\#{inspect val} does not conform to JSON schema\"}\n"
+                                <> validatorfn_string(name, Map.delete(schema, "minimum"))
+      true ->                      validatorfn_string(name, Map.delete(schema, "minimum"))
+    end
+  end
+
+  def validatorfn_string(name, schema = %{"minimum" => v}) do
+    "def validate_#{name}(val) when is_number(val) and val < #{v}, do: {:error, \"\#{inspect val} does not conform to JSON schema\"}\n"
+      <> validatorfn_string(name, Map.delete(schema, "minimum"))
+  end
+
+  ##############################################################################
+
+  def validatorfn_string(name, schema = %{"maximum" => v, "type" => "integer"}) do
+    "def validate_#{name}(val) when is_integer(val) and val > #{v}, do: {:error, \"\#{inspect val} does not conform to JSON schema\"}\n"
+      <> validatorfn_string(name, Map.delete(schema, "maximum"))
+  end
+
+  def validatorfn_string(name, schema = %{"maximum" => v, "type" => "number"}) do
+    "def validate_#{name}(val) when is_number(val) and val > #{v}, do: {:error, \"\#{inspect val} does not conform to JSON schema\"}\n"
+      <> validatorfn_string(name, Map.delete(schema, "maximum"))
+  end
+
+  def validatorfn_string(name, schema = %{"maximum" => v, "type" => typelist}) when is_list(typelist) do
+    cond do
+      "number"  in typelist -> "def validate_#{name}(val) when is_number(val) and val > #{v}, do: {:error, \"\#{inspect val} does not conform to JSON schema\"}\n"
+                                <> validatorfn_string(name, Map.delete(schema, "maximum"))
+      "integer" in typelist -> "def validate_#{name}(val) when is_integer(val) and val > #{v}, do: {:error, \"\#{inspect val} does not conform to JSON schema\"}\n"
+                                <> validatorfn_string(name, Map.delete(schema, "maximum"))
+      true ->                      validatorfn_string(name, Map.delete(schema, "maximum"))
+    end
+  end
+
+  def validatorfn_string(name, schema = %{"maximum" => v}) do
+    "def validate_#{name}(val) when is_number(val) and val > #{v}, do: {:error, \"\#{inspect val} does not conform to JSON schema\"}\n"
+      <> validatorfn_string(name, Map.delete(schema, "maximum"))
+  end
+
+  ##############################################################################
+
   def validatorfn_string(name, schema = %{"minItems" => l}) do
     "def validate_#{name}(val) when is_list(val) and length(val) < #{l}, do: {:error, \"\#{inspect val} does not conform to JSON schema\"}\n"
       <> validatorfn_string(name, Map.delete(schema, "minItems"))
@@ -82,10 +218,12 @@ defmodule Exonerate.Codesynth do
 
   # the finalizer decides whether or not we want to trap invalid schema elements.
   # if a "type" specification has been made, then we do, if not, then the schema
-  # is permissive.
-  def finalizer_string(name, %{"type" => _}), do: "def validate_#{name}(val), do: {:error, \"\#{inspect val} does not conform to JSON schema\"}"
-  def finalizer_string(name, false), do:          "def validate_#{name}(val), do: {:error, \"\#{inspect val} does not conform to JSON schema\"}"
-  def finalizer_string(name, _), do:              "def validate_#{name}(val), do: :ok"
+  # is permissive. A default value (even if it is not compliant will always)
+  # self-validate.
+  def finalizer_string(name, %{"default" => _}), do: "def validate_#{name}(val), do: :ok"
+  def finalizer_string(name, %{"type" => _}), do:    "def validate_#{name}(val), do: {:error, \"\#{inspect val} does not conform to JSON schema\"}"
+  def finalizer_string(name, false), do:             "def validate_#{name}(val), do: {:error, \"\#{inspect val} does not conform to JSON schema\"}"
+  def finalizer_string(name, _), do:                 "def validate_#{name}(val), do: :ok"
 
   ##############################################################################
   ## dependencies_string subcomponents
@@ -96,11 +234,11 @@ defmodule Exonerate.Codesynth do
 
   def regexstring(name, spec), do: regexes(name, spec) |> Enum.join("\n")
 
-  def regexes(name, spec = %{"pattern" => p}), do: ["@pattern_#{name} Regex.compile(\"#{p}\")\n" | regexes(name, Map.delete(spec, "pattern"))]
+  def regexes(name, spec = %{"pattern" => p}), do: ["@pattern_#{name} Regex.compile(\"#{p}\") |> elem(1)\n" | regexes(name, Map.delete(spec, "pattern"))]
   def regexes(name, spec = %{"patternProperties" => p}) do
     (p |> Map.keys
        |> Enum.with_index
-       |> Enum.map(fn {pp, idx} -> "@patternprop_#{name}_#{idx} Regex.compile(\"#{pp}\")\n" end))
+       |> Enum.map(fn {pp, idx} -> "@patternprop_#{name}_#{idx} Regex.compile(\"#{pp}\") |> elem(1)\n" end))
        ++ regexes(name, Map.delete(spec, "patternProperties"))
   end
   def regexes(_name, _), do: []
@@ -184,11 +322,9 @@ defmodule Exonerate.Codesynth do
     else
       """
         def validate_#{name}__each({k,v}) do
-          cond do
-            #{subschema_calls(name, map)}
-            #{matching_calls(name, map)}
-            #{default_call(name, map)}
-          end
+          #{patternmatch_string(name, map)}
+          #{querymatch_string(name, map)}
+          #{combining_string(name, map)}
         end
       """
     end
@@ -206,28 +342,91 @@ defmodule Exonerate.Codesynth do
     validateeachstring(name, Map.put(schema, "type", find_type_dependencies(schema)))
   end
 
-  # validate_each helper functions
-  def subschema_calls(name, %{"properties" => map}) do
-    map |> Enum.map(fn {k,v} ->
-          "\"#{k}\" = k -> validate_#{name}_#{k}(v)"
-        end)
-        |> Enum.join("\n")
+  def patternmatch_string(name, schema = %{"patternProperties" => map}) do
+    {validation, shortfn, default} = case schema["additionalProperties"] do
+      false -> {"{validate_#{name}__pattern_0(v), true}", "{f.(v), true}", "{:ok, false}"}
+      nil   -> { "validate_#{name}__pattern_0(v)",        "f.(v)",         ":ok"}
+      _     -> {"{validate_#{name}__pattern_0(v), true}", "{f.(v), true}", "{:ok, false}"}
+    end
+
+    l = Map.keys(map) |> length
+    case l do
+      0 -> ""
+      1 -> "pmatch = if Regex.match?(@patternprop_#{name}_0, k), do: #{validation}, else: #{default}"
+      _ ->
+        patt_lst = 0..(l-1) |> Enum.map(fn idx -> "@patternprop_#{name}_#{idx}" end) |> Enum.join(",")
+        test_lst = 0..(l-1) |> Enum.map(fn idx -> "&__MODULE__.validate_#{name}__pattern_#{idx}/1" end) |> Enum.join(",")
+        """
+        pmatch = Enum.zip([#{patt_lst}], [#{test_lst}])
+          |> Enum.map(fn {r, f} -> if Regex.match?(r,k), do: #{shortfn}, else: #{default} end)
+        """
+    end
   end
-  def subschema_calls(_,_), do: ""
+  def patternmatch_string(_name, _), do: ""
 
-  def matching_calls(name, %{"patternProperties" => map}) do
-    map |> Enum.with_index
-        |> Enum.map(fn {{k,v}, idx} ->
-          "Regex.match?(k, @patternprop_#{name}_#{idx}) -> validate_#{name}__pattern_#{idx}(v)"
-        end)
-        |> Enum.join("\n")
+  def querymatch_string(name, schema = %{"properties" => properties}) do
+    {validation, default} = case schema["additionalProperties"] do
+      false -> {fn(ky) -> "\"#{ky}\" -> {validate_#{name}_#{ky}(v), true}" end, "{:ok, false}"}
+      nil   -> {fn(ky) -> "\"#{ky}\" ->  validate_#{name}_#{ky}(v)"        end, ":ok"}
+      _     -> {fn(ky) -> "\"#{ky}\" -> {validate_#{name}_#{ky}(v), true}" end, "{:ok, false}"}
+    end
+
+    query_match_strings = properties
+    |> Map.keys
+    |> Enum.map(validation)
+    |> Enum.join("\n")
+    """
+      qmatch = case k do
+        #{query_match_strings}
+        _ -> #{default}
+      end
+    """
   end
-  def matching_calls(_name, _), do: ""
+  def querymatch_string(_,_), do: ""
 
-  def default_call(_name, %{"additionalProperties" => false}),                do: "true -> {:error, \"extra property \#{k} found\"}"
-  def default_call(name,  %{"additionalProperties" => map}) when is_map(map), do: "true -> validate_#{name}__additionalProperties(v)"
-  def default_call(_name, _),                                                 do: "true -> :ok"
+  def default_check(_name, %{"additionalProperties" => false}), do: "{:error, \"does not conform to JSON schema\"}"
+  def default_check(name, %{"additionalProperties" => _}),     do: "validate_#{name}__additionalProperties(v)"
 
+  def combining_string(name, schema = %{"patternProperties" => pprop, "properties" => _, "additionalProperties" => _}) do
+    connector = if (pprop |> Map.keys |> length) == 1, do: ",", else: "|"
+    """
+      {result, matched} = [qmatch #{connector} pmatch] |> Enum.unzip
+      if Enum.any?(matched), do: result |> Exonerate.error_reduction(), else: #{default_check(name, schema)}
+    """
+  end
+  def combining_string(name, schema = %{"patternProperties" => pprop, "additionalProperties" => _}) do
+    if (pprop |> Map.keys |> length) == 1 do
+      """
+        {result, matched} = pmatch
+        if matched, do: result, else: #{default_check(name, schema)}
+      """
+    else
+      """
+        {result, matched} = Enum.unzip(pmatch)
+        if Enum.any?(matched), do: result |> Exonerate.error_reduction(), else: #{default_check(name,schema)}
+      """
+    end
+  end
+  def combining_string(name, schema = %{"properties" => _, "additionalProperties" => _}) do
+    """
+      {result, matched} = qmatch
+      if matched, do: result, else: #{default_check(name, schema)}
+    """
+  end
+  def combining_string(name, %{"additionalProperties" => _}) do
+    """
+      validate_#{name}__additionalProperties(v)
+    """
+  end
+  #without additional properties
+  def combining_string(name, %{"patternProperties" => pprop, "properties" => _}) do
+    if (pprop |> Map.keys |> length) == 1, do: "[qmatch , pmatch] |> Exonerate.error_reduction", else: "[qmatch | pmatch] |> Exonerate.error_reduction"
+  end
+  def combining_string(name, %{"patternProperties" => pprop}) do
+    if (pprop |> Map.keys |> length) == 1, do: "", else: "|> Exonerate.error_reduction"
+  end
+  def combining_string(name, %{"properties" => _}), do: ""
+  def combining_string(_,_), do: ""
 
   ##############################################################################
   ## validator function subcomponents
@@ -254,16 +453,6 @@ defmodule Exonerate.Codesynth do
   def guardverb("array"), do: "is_list(val)"
   def guardverb("object"), do: "is_map(val)"
 
-  #all the different guards that can happen:
-  def guards(spec = %{"minLength" => l}, "string"),  do: ["(length(val) >= #{l})" | guards(Map.delete(spec, "minLength"), "string")]
-  def guards(spec = %{"maxLength" => l}, "string"),  do: ["(length(val) <= #{l})" | guards(Map.delete(spec, "maxLength"), "string")]
-  def guards(spec = %{"multipleOf" => v}, type) when type in ["integer","number"], do: ["(rem(val, #{v}) == 0)" | guards(Map.delete(spec, "multipleOf"), type)]
-
-  def guards(spec = %{"minimum" => v, "exclusiveMinimum" => true}, type) when type in ["integer", "number"], do: ["(val > #{v})" | guards(spec |> Map.delete("minimum") |> Map.delete("exclusiveMinimum"), type)]
-  def guards(spec = %{"maximum" => v, "exclusiveMaximum" => true}, type) when type in ["integer", "number"], do: ["(val < #{v})" | guards(spec |> Map.delete("maximum") |> Map.delete("exclusiveMaximum"), type)]
-  def guards(spec = %{"minimum" => v}, type) when type in ["integer","number"],    do: ["(val >= #{v})" |         guards(Map.delete(spec, "minimum"), type)]
-  def guards(spec = %{"maximum" => v}, type) when type in ["integer","number"],    do: ["(val <= #{v})" |         guards(Map.delete(spec, "maximum"), type)]
-
   def guards(_,_), do: []
 
   @fmt_map %{"date-time" => "datetime", "email" => "email", "hostname" => "hostname", "ipv4" => "ipv4", "ipv6" => "ipv6", "uri" => "uri"}
@@ -277,11 +466,14 @@ defmodule Exonerate.Codesynth do
   def bodyproc(name, arr, mapfn), do: "([" <> Enum.join(arr, ",") <> "] ++ #{mapfn}) |> Exonerate.error_reduction"
 
   #some things can't be in guards, so we put them in bodies:
-  def bodyfns(name, spec = %{"pattern" => _p}, "string"), do:      ["check_regex(@regex_pattern_#{name}, val)" | bodyfns(name, Map.delete(spec, "pattern"), "string")]
-  def bodyfns(name, spec = %{"format" => p},   "string"), do:      ["check_format_#{@fmt_map[p]}(val)" | bodyfns(name, Map.delete(spec, "format"), "string")]
+  def bodyfns(name, spec = %{"pattern" => _p},  "string"), do: ["Exonerate.Checkers.check_regex(@pattern_#{name}, val)" | bodyfns(name, Map.delete(spec, "pattern"), "string")]
+  def bodyfns(name, spec = %{"format" => p},    "string"), do: ["Exonerate.Checkers.check_format_#{@fmt_map[p]}(val)" | bodyfns(name, Map.delete(spec, "format"), "string")]
+  def bodyfns(name, spec = %{"minLength" => l}, "string"), do: ["Exonerate.Checkers.check_minlength(val, #{l})" | bodyfns(name, Map.delete(spec, "minLength"), "string")]
+  def bodyfns(name, spec = %{"maxLength" => l}, "string"), do: ["Exonerate.Checkers.check_maxlength(val, #{l})" | bodyfns(name, Map.delete(spec, "maxLength"), "string")]
 
-  def bodyfns(name, spec = %{"minProperties" => p}, "object"), do: ["check_minproperties(val, #{p})" | bodyfns(name, Map.delete(spec, "minProperties"), "object")]
-  def bodyfns(name, spec = %{"maxProperties" => p}, "object"), do: ["check_maxproperties(val, #{p})" | bodyfns(name, Map.delete(spec, "maxProperties"), "object")]
+
+  def bodyfns(name, spec = %{"minProperties" => p}, "object"), do: ["Exonerate.Checkers.check_minproperties(val, #{p})" | bodyfns(name, Map.delete(spec, "minProperties"), "object")]
+  def bodyfns(name, spec = %{"maxProperties" => p}, "object"), do: ["Exonerate.Checkers.check_maxproperties(val, #{p})" | bodyfns(name, Map.delete(spec, "maxProperties"), "object")]
 
   def bodyfns(name, spec = %{"dependencies" => d}, "object") do
     (d |> Enum.map(fn {k, v} -> "check_dependencies(val, \"#{k}\", #{inspect v})" end)) ++ bodyfns(name, Map.delete(spec, "dependencies"), "object")
