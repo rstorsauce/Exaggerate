@@ -172,7 +172,6 @@ defmodule ExonerateValidationBasicTest do
     isvalid   %{"type" => "object", "properties" => %{}, "additionalProperties" => %{"type" => "string"}}
 
     notvalid  %{"type" => "object", "properties" => %{}, "additionalProperties" => "not ok."}
-    notvalid  %{"type" => "object", "additionalProperties" => true}
     notvalid  %{"type" => "number", "additionalProperties" => true}
     notvalid  %{"type" => "object", "properties" => %{}, "additionalProperties" => %{"foo" => "bar"}}
     notvalid  %{"type" => "object", "properties" => %{}, "additionalProperties" => %{"type" => "foo"}}
@@ -265,8 +264,6 @@ defmodule ExonerateValidationBasicTest do
 
     isvalid   %{"type" => ["array", "string"], "uniqueItems" => true}
     isvalid   %{"type" => ["array", "string"], "items" => [%{"type" => "string"}], "additionalItems" => true}
-
-    notvalid  %{"type" => "array", "additionalItems" => true}
 
     notvalid  %{"type" => "string", "uniqueItems" => true}
     notvalid  %{"type" => "string", "additionalItems" => true}

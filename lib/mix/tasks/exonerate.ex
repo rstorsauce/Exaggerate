@@ -9,9 +9,9 @@ defmodule Mix.Tasks.Exoneratebuildtests do
           "items", "maxItems", "maxLength", "maxProperties", "maximum",
           "minItems", "minLength", "minProperties", "minimum",
           #"multipleOf", #"not", "oneOf"
-          "pattern", "patternProperties", "properties"]#,
+          "pattern", "patternProperties", "properties",
           ##"ref", "refRemote",
-          #"required", "type", "uniqueItems"]
+          "required", "type", "uniqueItems"]
 
   def fetch_file(suite) do
     #generate the full uri from the suite name.
@@ -39,10 +39,7 @@ defmodule Mix.Tasks.Exoneratebuildtests do
        {:error, error} -> raise("error, #{inspect schema} appears to be invalid, throws #{error}")
     end
 
-    IO.puts("==========================")
-
     schemacode = Exonerate.Codesynth.validator_string("test#{idx}", schema)
-          |> IO.inspect
 
     testcode = tests |> Enum.map(&__MODULE__.singletest(&1, "validate_test#{idx}"))
                      |> Enum.join("\n")

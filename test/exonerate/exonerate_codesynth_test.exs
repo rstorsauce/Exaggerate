@@ -203,6 +203,7 @@ defmodule ExonerateCodesynthBasicTest do
       end
 
       def validate_test(val=%{"test1" => _}) when is_map(val), do: Enum.map(val, &__MODULE__.validate_test__each/1) |> Exonerate.error_reduction
+      def validate_test(val) when is_map(val), do: {:error, "\#{inspect val} does not conform to JSON schema"}
       def validate_test(val), do: {:error, \"\#{inspect(val)} does not conform to JSON schema\"}
     """
 
@@ -369,7 +370,7 @@ defmodule ExonerateCodesynthBasicTest do
 
     codesynth_match %{"type" => "array", "uniqueItems" => true},
     """
-      def validate_test(val) when is_list(val), do: is_unique(val)
+      def validate_test(val) when is_list(val), do: Exonerate.Checkers.check_unique(val)
       def validate_test(val), do: {:error, \"\#{inspect(val)} does not conform to JSON schema\"}
     """
 

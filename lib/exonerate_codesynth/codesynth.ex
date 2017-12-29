@@ -212,8 +212,15 @@ defmodule Exonerate.Codesynth do
   end
 
   ## the triplet type actually passes critical type information on to subcomponents
+  def validatorfn_string(name, schema = %{"required" => _}, type = "object") do
+    """
+      def validate_#{name}(val #{requiredstring(schema, type)}) when is_map(val), do: #{bodystring(name, schema, type)}
+      def validate_#{name}(val) when is_map(val), do: {:error, \"\#{inspect val} does not conform to JSON schema\"}
+    """
+  end
+
   def validatorfn_string(name, schema, type) do
-    "def validate_#{name}(val #{requiredstring(schema, type)}) #{guardstring(schema, type)}, do: #{bodystring(name, schema, type)}"
+    "def validate_#{name}(val) #{guardstring(schema, type)}, do: #{bodystring(name, schema, type)}"
   end
 
   # the finalizer decides whether or not we want to trap invalid schema elements.
@@ -486,7 +493,7 @@ defmodule Exonerate.Codesynth do
       bodyfns(name, Map.delete(spec, "properties"), "object")
     end
   end
-  def bodyfns(name, spec = %{"uniqueItems" => true}, "array"), do: ["is_unique(val)" | bodyfns(name, Map.delete(spec, "uniqueItems"), "array")]
+  def bodyfns(name, spec = %{"uniqueItems" => true}, "array"), do: ["Exonerate.Checkers.check_unique(val)" | bodyfns(name, Map.delete(spec, "uniqueItems"), "array")]
   def bodyfns(name, spec = %{"items" => list}, "array") when is_list(list) and length(list) > 0, do: ["validate_#{name}__all(val)" | bodyfns(name, Map.delete(spec, "items"), "array")]
   def bodyfns(_name, _, _), do: []
 

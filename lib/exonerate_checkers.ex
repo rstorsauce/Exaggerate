@@ -24,4 +24,11 @@ defmodule Exonerate.Checkers do
   def check_regex(re, val) do
     if Regex.match?(re, val), do: :ok, else: {:error, "#{inspect val} does not conform to JSON schema"}
   end
+
+  def check_unique([]), do: :ok
+  def check_unique([singleton]), do: :ok
+  def check_unique([head | tail]), do: check_unique(tail, tail, head)
+  def check_unique([head | tail], [],_), do: check_unique(tail)
+  def check_unique(_, [ref  | tail], ref), do: {:error, "array contains duplicate values"}
+  def check_unique(x, [head | tail], ref), do: check_unique(x, tail, ref)
 end
