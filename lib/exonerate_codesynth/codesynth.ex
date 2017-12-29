@@ -60,15 +60,15 @@ defmodule Exonerate.Codesynth do
   def validatorfn_string(name, schema = %{"multipleOf" => v, "type" => typelist}) when is_list(typelist) do
     if ("number" in typelist) || ("integer" in typelist) do
       "def validate_#{name}(val) when is_integer(val) and (rem(val,#{v}) != 0), do: {:error, \"\#{inspect val} does not conform to JSON schema\"}\n"
-        <> validatorfn_string(name, Map.delete(schema, "minimum"))
+        <> validatorfn_string(name, Map.delete(schema, "multipleOf"))
     else
-      validatorfn_string(name, Map.delete(schema, "minimum"))
+      validatorfn_string(name, Map.delete(schema, "multipleOf"))
     end
   end
 
   def validatorfn_string(name, schema = %{"multipleOf" => v}) do
     "def validate_#{name}(val) when is_integer(val) and (rem(val,#{v}) != 0), do: {:error, \"\#{inspect val} does not conform to JSON schema\"}\n"
-      <> validatorfn_string(name, Map.delete(schema, "minimum"))
+      <> validatorfn_string(name, Map.delete(schema, "multipleOf"))
   end
 
 

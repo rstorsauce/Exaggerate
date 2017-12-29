@@ -2,10 +2,8 @@ defmodule ExonerateCodesynthBasicTest.Helper do
   defmacro codesynth_match(map, code) do
     quote do
       get_route = unquote(map)
-      IO.puts("==================")
-      get_code = unquote(code) |> IO.inspect |> Code.format_string! |> Enum.join
-      IO.puts("---------------------------")
-      test_code = Exonerate.Codesynth.validator_string("test", get_route) |> IO.inspect |> Code.format_string! |> Enum.join
+      get_code = unquote(code) |> Code.format_string! |> Enum.join
+      test_code = Exonerate.Codesynth.validator_string("test", get_route) |> Code.format_string! |> Enum.join
       assert test_code == get_code
     end
   end
