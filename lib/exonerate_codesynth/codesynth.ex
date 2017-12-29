@@ -12,7 +12,11 @@ defmodule Exonerate.Codesynth do
   ## main subcomponent functions
 
   def validator_string(name, schema) do
-    Enum.join([dependencies_string(name, schema), validatorfn_string(name, schema), finalizer_string(name, schema)], "\n")
+    Enum.join([
+        dependencies_string(name, schema),
+        validatorfn_string(name, schema),
+        finalizer_string(name, schema)
+      ], "\n")
   end
 
   # the dependencies strings are components (regex + fun) that we need to do
@@ -24,6 +28,7 @@ defmodule Exonerate.Codesynth do
       #{additionals_string(name, schema)}
       #{patternpropertystring(name, schema)}
       #{subschemastring(name, schema)}
+      #{validate_qualifier_string(name, schema)}
       #{validateeachstring(name, schema)}
     """
   end
@@ -34,8 +39,8 @@ defmodule Exonerate.Codesynth do
   # assembly of validation results.
 
   #single special case values:
-  #true and false are taken care of by the finalizer.
-  def validatorfn_string(name, bool) when is_boolean(bool), do: ""
+  def validatorfn_string(name, true),  do: "def validate_#{name}(val), do: :ok"
+  def validatorfn_string(name, false), do: "def validate_#{name}(val), do: {:error, \"\#{inspect val} does not conform to JSON schema\"}"
 
   #nil requires a special handler.
   def validatorfn_string(name, %{"type" => "null"}) do
@@ -45,7 +50,6 @@ defmodule Exonerate.Codesynth do
   end
 
   #special case when we have minItems/maxItems in the array spec:
-
 
   def validatorfn_string(name, schema = %{"multipleOf" => v, "type" => "integer"}) do
     "def validate_#{name}(val) when is_integer(val) and (rem(val,#{v}) != 0), do: {:error, \"\#{inspect val} does not conform to JSON schema\"}\n"
@@ -162,7 +166,9 @@ defmodule Exonerate.Codesynth do
 
   def validatorfn_string(name, schema = %{"maximum" => v, "type" => "number"}) do
     "def validate_#{name}(val) when is_number(val) and val > #{v}, do: {:error, \"\#{inspect val} does not conform to JSON schema\"}\n"
-      <> validatorfn_string(name, Map.delete(schema, "maximum"))
+      <> validatorfn_string(name, Map.delete(schema, "maxno need to exchange info personally.
+
+imum"))
   end
 
   def validatorfn_string(name, schema = %{"maximum" => v, "type" => typelist}) when is_list(typelist) do
@@ -207,8 +213,12 @@ defmodule Exonerate.Codesynth do
     Enum.map(type, &validatorfn_string(name, schema, &1)) |> Enum.join("\n")
   end
 
+  #trampoline an untyped schema back to all schemas that need special declations
+  #plus a catch-all.  Using the :qualifier atom allows it to be caught only by
+  #the qualifier bodystring methods.
   def validatorfn_string(name, schema = %{}) do
-     validatorfn_string(name, Map.put(schema, "type", find_type_dependencies(schema)))
+     validatorfn_string(name, Map.put(schema, "type", find_type_dependencies(schema))) <>
+     "\n def validate_#{name}(val), do: #{bodystring(name, schema, :qualifier)}"
   end
 
   ## the triplet type actually passes critical type information on to subcomponents
@@ -229,8 +239,8 @@ defmodule Exonerate.Codesynth do
   # self-validate.
   def finalizer_string(name, %{"default" => _}), do: "def validate_#{name}(val), do: :ok"
   def finalizer_string(name, %{"type" => _}), do:    "def validate_#{name}(val), do: {:error, \"\#{inspect val} does not conform to JSON schema\"}"
-  def finalizer_string(name, false), do:             "def validate_#{name}(val), do: {:error, \"\#{inspect val} does not conform to JSON schema\"}"
-  def finalizer_string(name, _), do:                 "def validate_#{name}(val), do: :ok"
+  def finalizer_string(name, _), do:                 ""
+
 
   ##############################################################################
   ## dependencies_string subcomponents
@@ -276,21 +286,97 @@ defmodule Exonerate.Codesynth do
   def patternpropertystring(_,_), do: ""
 
   # subschemas are recursive validations that come from either arrays or
-  # object properties
-  def subschemastring(name, %{"items" => list}) when is_list(list) do
-    list |> Enum.with_index
+  # object properties, or qualifiers.
+  def subschemastring(name, schema = %{"allOf" => list}) when is_list(list) do
+    (list |> Enum.with_index
+         |> Enum.map(fn {v,idx} ->
+           validator_string("#{name}__allof_#{idx}", v)
+         end)
+         |> Enum.join("\n\n"))
+      <> subschemastring(name, Map.delete(schema, "allOf"))
+  end
+  def subschemastring(name, schema = %{"anyOf" => list}) when is_list(list) do
+    (list |> Enum.with_index
+         |> Enum.map(fn {v,idx} ->
+           validator_string("#{name}__anyof_#{idx}", v)
+         end)
+         |> Enum.join("\n\n"))
+      <> subschemastring(name, Map.delete(schema, "anyOf"))
+  end
+  def subschemastring(name, schema = %{"oneOf" => list}) when is_list(list) do
+    (list |> Enum.with_index
+         |> Enum.map(fn {v,idx} ->
+           validator_string("#{name}__oneof_#{idx}", v)
+         end)
+         |> Enum.join("\n\n"))
+      <> subschemastring(name, Map.delete(schema, "oneOf"))
+  end
+  def subschemastring(name, schema = %{"not" => subschema}) when is_map(subschema) do
+    validator_string("#{name}__not", subschema)
+    <> subschemastring(name, Map.delete(schema, "not"))
+  end
+
+  def subschemastring(name, schema = %{"items" => list}) when is_list(list) do
+    (list |> Enum.with_index
          |> Enum.map(fn {v,idx} ->
            validator_string("#{name}_#{idx}", v)
          end)
-         |> Enum.join("\n\n")
+         |> Enum.join("\n\n"))
+      <> subschemastring(name, Map.delete(schema, "items"))
   end
-  def subschemastring(name, %{"properties" => map}) when is_map(map) do
-    map |> Enum.map(fn {k,v} ->
+  def subschemastring(name, schema = %{"properties" => map}) when is_map(map) do
+    (map |> Enum.map(fn {k,v} ->
           validator_string("#{name}_#{k}", v)
         end)
-        |> Enum.join("\n\n")
+        |> Enum.join("\n\n"))
+     <> subschemastring(name, Map.delete(schema, "properties"))
   end
   def subschemastring(_,_), do: ""
+
+  def validate_qualifier_string(name, schema = %{"allOf" => list}) do
+    validation_list = list
+      |> Enum.with_index
+      |> Enum.map(fn {_v, idx} -> "validate_#{name}__allof_#{idx}(val)" end)
+      |> Enum.join(",")
+
+    """
+      def validate_#{name}__allof(val), do: [#{validation_list}] |> Exonerate.error_reduction
+
+    """ <> validate_qualifier_string(name, Map.delete(schema, "allOf"))
+  end
+  def validate_qualifier_string(name, schema = %{"anyOf" => list}) do
+    validation_list = list
+      |> Enum.with_index
+      |> Enum.map(fn {_v, idx} -> "(validate_#{name}__anyof_#{idx}(val) == :ok) -> :ok" end)
+      |> Enum.join("\n")
+
+    """
+      def validate_#{name}__anyof(val) do
+        cond do
+          #{validation_list}
+          true -> {:error, \"\#{inspect val} does not conform to JSON schema\"}
+        end
+      end
+
+    """ <> validate_qualifier_string(name, Map.delete(schema, "anyOf"))
+  end
+  def validate_qualifier_string(name, schema = %{"oneOf" => list}) do
+    validation_list = list
+      |> Enum.with_index
+      |> Enum.map(fn {_v, idx} -> "&__MODULE__.validate_#{name}__oneof_#{idx}/1" end)
+      |> Enum.join(",")
+
+    """
+      def validate_#{name}__oneof(val) do
+        count = [#{validation_list}]
+          |> Enum.map(fn f -> f.(val) end)
+          |> Enum.count(fn res -> res == :ok end)
+        if count == 1, do: :ok, else: {:error, \"\#{inspect val} does not conform to JSON schema\"}
+      end
+
+    """ <> validate_qualifier_string(name, Map.delete(schema, "oneOf"))
+  end
+  def validate_qualifier_string(name, _), do: ""
 
   # validate_each functions are functions that remap onto the subschema functions
   # intended to be called as a result of a Enum.map in the main validator function
@@ -473,28 +559,33 @@ defmodule Exonerate.Codesynth do
   def bodyproc(name, arr, mapfn), do: "([" <> Enum.join(arr, ",") <> "] ++ #{mapfn}) |> Exonerate.error_reduction"
 
   #some things can't be in guards, so we put them in bodies:
-  def bodyfns(name, spec = %{"pattern" => _p},  "string"), do: ["Exonerate.Checkers.check_regex(@pattern_#{name}, val)" | bodyfns(name, Map.delete(spec, "pattern"), "string")]
-  def bodyfns(name, spec = %{"format" => p},    "string"), do: ["Exonerate.Checkers.check_format_#{@fmt_map[p]}(val)" | bodyfns(name, Map.delete(spec, "format"), "string")]
-  def bodyfns(name, spec = %{"minLength" => l}, "string"), do: ["Exonerate.Checkers.check_minlength(val, #{l})" | bodyfns(name, Map.delete(spec, "minLength"), "string")]
-  def bodyfns(name, spec = %{"maxLength" => l}, "string"), do: ["Exonerate.Checkers.check_maxlength(val, #{l})" | bodyfns(name, Map.delete(spec, "maxLength"), "string")]
+  def bodyfns(name, schema = %{"pattern" => _p},  "string"), do: ["Exonerate.Checkers.check_regex(@pattern_#{name}, val)" | bodyfns(name, Map.delete(schema, "pattern"), "string")]
+  def bodyfns(name, schema = %{"format" => p},    "string"), do: ["Exonerate.Checkers.check_format_#{@fmt_map[p]}(val)" | bodyfns(name, Map.delete(schema, "format"), "string")]
+  def bodyfns(name, schema = %{"minLength" => l}, "string"), do: ["Exonerate.Checkers.check_minlength(val, #{l})" | bodyfns(name, Map.delete(schema, "minLength"), "string")]
+  def bodyfns(name, schema = %{"maxLength" => l}, "string"), do: ["Exonerate.Checkers.check_maxlength(val, #{l})" | bodyfns(name, Map.delete(schema, "maxLength"), "string")]
 
+  def bodyfns(name, schema = %{"minProperties" => p}, "object"), do: ["Exonerate.Checkers.check_minproperties(val, #{p})" | bodyfns(name, Map.delete(schema, "minProperties"), "object")]
+  def bodyfns(name, schema = %{"maxProperties" => p}, "object"), do: ["Exonerate.Checkers.check_maxproperties(val, #{p})" | bodyfns(name, Map.delete(schema, "maxProperties"), "object")]
 
-  def bodyfns(name, spec = %{"minProperties" => p}, "object"), do: ["Exonerate.Checkers.check_minproperties(val, #{p})" | bodyfns(name, Map.delete(spec, "minProperties"), "object")]
-  def bodyfns(name, spec = %{"maxProperties" => p}, "object"), do: ["Exonerate.Checkers.check_maxproperties(val, #{p})" | bodyfns(name, Map.delete(spec, "maxProperties"), "object")]
-
-  def bodyfns(name, spec = %{"dependencies" => d}, "object") do
-    (d |> Enum.map(fn {k, v} -> "check_dependencies(val, \"#{k}\", #{inspect v})" end)) ++ bodyfns(name, Map.delete(spec, "dependencies"), "object")
+  def bodyfns(name, schema = %{"dependencies" => d}, "object") do
+    (d |> Enum.map(fn {k, v} -> "check_dependencies(val, \"#{k}\", #{inspect v})" end)) ++ bodyfns(name, Map.delete(schema, "dependencies"), "object")
   end
 
-  def bodyfns(name, spec = %{"properties" => p}, "object") do
-    if (p |> Map.keys |> length == 1) && simpleobject(spec) do
-      (p |> Enum.map(fn {k, v} -> "validate_#{name}_#{k}(val[\"#{k}\"])" end)) ++ bodyfns(name, Map.delete(spec, "properties"), "object")
+  def bodyfns(name, schema = %{"properties" => p}, "object") do
+    if (p |> Map.keys |> length == 1) && simpleobject(schema) do
+      (p |> Enum.map(fn {k, v} -> "validate_#{name}_#{k}(val[\"#{k}\"])" end)) ++ bodyfns(name, Map.delete(schema, "properties"), "object")
     else
-      bodyfns(name, Map.delete(spec, "properties"), "object")
+      bodyfns(name, Map.delete(schema, "properties"), "object")
     end
   end
-  def bodyfns(name, spec = %{"uniqueItems" => true}, "array"), do: ["Exonerate.Checkers.check_unique(val)" | bodyfns(name, Map.delete(spec, "uniqueItems"), "array")]
-  def bodyfns(name, spec = %{"items" => list}, "array") when is_list(list) and length(list) > 0, do: ["validate_#{name}__all(val)" | bodyfns(name, Map.delete(spec, "items"), "array")]
+  def bodyfns(name, schema = %{"uniqueItems" => true}, "array"), do: ["Exonerate.Checkers.check_unique(val)" | bodyfns(name, Map.delete(schema, "uniqueItems"), "array")]
+  def bodyfns(name, schema = %{"items" => list}, "array") when is_list(list) and length(list) > 0, do: ["validate_#{name}__all(val)" | bodyfns(schema, Map.delete(schema, "items"), "array")]
+
+  def bodyfns(name, schema = %{"allOf" => list}, type), do: ["validate_#{name}__allof(val)" | bodyfns(name, Map.delete(schema, "allOf"), type)]
+  def bodyfns(name, schema = %{"anyOf" => list}, type), do: ["validate_#{name}__anyof(val)" | bodyfns(name, Map.delete(schema, "anyOf"), type)]
+  def bodyfns(name, schema = %{"oneOf" => list}, type), do: ["validate_#{name}__oneof(val)" | bodyfns(name, Map.delete(schema, "oneOf"), type)]
+  def bodyfns(name, schema = %{"not" => list}, type),   do: ["Exonerate.invert(val, validate_#{name}__not(val))" | bodyfns(name, Map.delete(schema, "not"), type)]
+
   def bodyfns(_name, _, _), do: []
 
   #one last special sugar for objects

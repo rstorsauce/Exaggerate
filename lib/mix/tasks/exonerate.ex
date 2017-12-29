@@ -5,13 +5,13 @@ defmodule Mix.Tasks.Exoneratebuildtests do
   @rootdir  File.cwd!
   @testsdir  "test/JSONSchematests"
   @remoteroot "https://raw.githubusercontent.com/json-schema-org/JSON-Schema-Test-Suite/master/tests/draft4/"
-  @tests ["additionalItems", "additionalProperties", #, "allOf", "anyOf"]
+  @tests ["additionalItems", "additionalProperties", "allOf", "anyOf",
           "default",# "definitions"]#, #"dependencies", "enum",
           "items", "maxItems", "maxLength", "maxProperties", "maximum",
           "minItems", "minLength", "minProperties", "minimum",
-          "multipleOf", #"not", "oneOf"
+          "multipleOf", "not", "oneOf",
           "pattern", "patternProperties", "properties",
-          ##"ref", "refRemote",
+          #"ref", "refRemote",
           "required", "type", "uniqueItems"]
 
 
