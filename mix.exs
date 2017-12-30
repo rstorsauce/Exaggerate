@@ -9,7 +9,6 @@ defmodule Exaggerate.Mixfile do
       elixir: "~> 1.6-dev",
       start_permanent: Mix.env == :prod,
       deps: deps(),
-      preferred_cli_env: [exoneratebuildtests: :test]
     ]
   end
 
@@ -19,7 +18,7 @@ defmodule Exaggerate.Mixfile do
 
   defp deps do
     [
-      {:httpoison, "~> 0.13", only: [:test]},
+      {:exonerate, git: "https://github.com/rstorsauce/exonerate.git", tag: "master"},
       {:poison, "~> 3.1"},
       {:plug, "~> 1.4"}
     ]
