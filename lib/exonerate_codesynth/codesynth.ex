@@ -315,7 +315,17 @@ imum"))
     validator_string("#{name}__not", subschema)
     <> subschemastring(name, Map.delete(schema, "not"))
   end
-
+  def subschemastring(name, schema = %{"dependencies" => deps_map}) when is_map(deps_map) do
+    (deps_map |> Enum.map(fn {k,v} ->
+        if is_map(v) do
+          validator_string("#{name}__deps_#{k}", v)
+        else
+          deps_array("#{name}__deps_#{k}", k, v)
+        end
+      end)
+      |> Enum.join("\n\n"))
+    <> subschemastring(name, Map.delete(schema, "dependencies"))
+  end
   def subschemastring(name, schema = %{"items" => list}) when is_list(list) do
     (list |> Enum.with_index
          |> Enum.map(fn {v,idx} ->
@@ -376,7 +386,43 @@ imum"))
 
     """ <> validate_qualifier_string(name, Map.delete(schema, "oneOf"))
   end
+  def validate_qualifier_string(name, schema = %{"dependencies" => depsmap}) do
+    deps_fnmap = depsmap
+      |> Enum.map(fn {k, _v} -> "\"#{k}\" => &__MODULE__.validate_#{name}__deps_#{k}/1" end)
+      |> Enum.join(",")
+      |> fn s -> ~s(%{#{s}}) end.()
+
+    """
+      def validate_#{name}__deps(val) do
+        depsmap = #{deps_fnmap}
+        Map.keys(val)
+          |> Enum.filter(&Map.has_key?(depsmap, &1))
+          |> Enum.map(fn k -> depsmap[k].(val) end)
+          |> Exonerate.error_reduction
+      end
+    """
+  end
+
   def validate_qualifier_string(name, _), do: ""
+
+  @doc """
+    a helper function to handle deps arrays
+  """
+  def deps_array(name, keyname, deps_list) do
+    key_list = deps_list
+      |> Enum.map(fn s -> ~s("#{s}") end)
+      |> Enum.join(",")
+    """
+      def validate_#{name}(val) do
+        required_key_list = [#{key_list}]
+        actual_key_list = Map.keys(val)
+
+        is_valid = required_key_list |> Enum.all?(fn k -> k in actual_key_list end)
+        if is_valid, do: :ok, else: {:error, \"\#{inspect val} does not conform to JSON schema\"}
+      end
+    """
+  end
+
 
   # validate_each functions are functions that remap onto the subschema functions
   # intended to be called as a result of a Enum.map in the main validator function
@@ -567,9 +613,7 @@ imum"))
   def bodyfns(name, schema = %{"minProperties" => p}, "object"), do: ["Exonerate.Checkers.check_minproperties(val, #{p})" | bodyfns(name, Map.delete(schema, "minProperties"), "object")]
   def bodyfns(name, schema = %{"maxProperties" => p}, "object"), do: ["Exonerate.Checkers.check_maxproperties(val, #{p})" | bodyfns(name, Map.delete(schema, "maxProperties"), "object")]
 
-  def bodyfns(name, schema = %{"dependencies" => d}, "object") do
-    (d |> Enum.map(fn {k, v} -> "check_dependencies(val, \"#{k}\", #{inspect v})" end)) ++ bodyfns(name, Map.delete(schema, "dependencies"), "object")
-  end
+  def bodyfns(name, schema = %{"dependencies" => d}, "object"), do: ["validate_#{name}__deps(val)" | bodyfns(name, Map.delete(schema, "dependencies"), "object")]
 
   def bodyfns(name, schema = %{"properties" => p}, "object") do
     if (p |> Map.keys |> length == 1) && simpleobject(schema) do

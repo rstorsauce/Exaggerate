@@ -31,4 +31,5 @@ defmodule Exonerate.Checkers do
   def check_unique([head | tail], [],_), do: check_unique(tail)
   def check_unique(_, [ref  | tail], ref), do: {:error, "array contains duplicate values"}
   def check_unique(x, [head | tail], ref), do: check_unique(x, tail, ref)
+  
 end
