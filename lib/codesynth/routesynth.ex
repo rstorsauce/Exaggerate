@@ -195,6 +195,14 @@ defmodule Exaggerate.Codesynth.Routesynth do
   def get_parameter_fetch_function(%{"in" => location, "name" => name, "required" => true}) when is_binary(location), do: "#{location}_parameter(conn, \"#{name}\", :required)"
   def get_parameter_fetch_function(%{"in" => location, "name" => name}) when is_binary(location), do: "#{location}_parameter(conn, \"#{name}\")"
 
+  def pathconv(str), do: str |> String.replace("/","_") |> String.replace(~r/[{}]/, "")
+
+  #get all of the requestBody parameters first.
+  def get_checked_param_fetch(schema = %{"requestBody" => body_params}) do
+    converted_pathname = schema["path"] |> pathconv
+    "requestparams = requestbody_parameter(conn, &__MODULE__.input_validation_#{converted_pathname})"
+  end
+
   def get_checked_param_fetch(%{"required" => true, "in" => "path"}), do: nil
   def get_checked_param_fetch(param = %{"required" => true, "name" => name}), do: "{:ok, #{name}} <- " <> get_parameter_fetch_function(param)
   def get_checked_param_fetch(%{}), do: nil

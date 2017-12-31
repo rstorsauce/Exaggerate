@@ -437,22 +437,19 @@ defmodule Exaggerate.Validation.Schema do
 
   #this is a temporary fix.  It scrubs the "special" schema modifications created by
   #the openAPI validation rules.
-  def scrub_schema(schema = %{"format" => "int32"}),  do: Map.delete(schema, "format")
-  def scrub_schema(schema = %{"format" => "int64"}),  do: Map.delete(schema, "format")
-  def scrub_schema(schema = %{"format" => "float"}),  do: Map.delete(schema, "format")
-  def scrub_schema(schema = %{"format" => "double"}),  do: Map.delete(schema, "format")
-  def scrub_schema(schema = %{"format" => "byte"}),  do: Map.delete(schema, "format")
-  def scrub_schema(schema = %{"format" => "binary"}),  do: Map.delete(schema, "format")
-  def scrub_schema(schema = %{"format" => "date"}),  do: Map.delete(schema, "format")
-  def scrub_schema(schema = %{"format" => "dateTime"}),  do: Map.delete(schema, "format")
-  def scrub_schema(schema = %{"format" => "password"}),  do: Map.delete(schema, "format")
+  def scrub_schema(schema = %{"format" => f}) when f in [
+      "int32", "int64", "float", "double", "byte", "binary", "date", "dateTime", "password"
+    ],  do: Map.delete(schema, "format")
+
+  # assert that we're going to go through all the keys with a map, and the empty
+  # list signifies that we didn't see any of the keys yet.
   def scrub_schema(schema) when is_map(schema), do: scrub_schema(schema, [])
-  def scrub_schema(schema, arr) when is_map(schema) do
+  def scrub_schema(schema, checked_keys) do
     key_to_try = schema |> Map.keys
-                        |> Enum.find(fn k -> !(k in arr) end)
+                        |> Enum.find(fn k -> !(k in checked_keys) end)
     if key_to_try do
       new_schema = Map.put(schema, key_to_try, scrub_schema(schema[key_to_try]))
-      scrub_schema(new_schema, [key_to_try | arr])
+      scrub_schema(new_schema, [key_to_try | checked_keys])
     else
       schema
     end
@@ -460,6 +457,8 @@ defmodule Exaggerate.Validation.Schema do
   def scrub_schema([]), do: []
   def scrub_schema([head | tail]), do: [scrub_schema(head) | scrub_schema(tail)]
   def scrub_schema(s), do: s
+
+  # actual validation function.
 
   def validate(schema) do
     res = with :ok <- Exonerate.Validation.validate(scrub_schema(schema)) do
