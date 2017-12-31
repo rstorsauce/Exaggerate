@@ -198,10 +198,11 @@ defmodule Exaggerate.Codesynth.Routesynth do
   def pathconv(str), do: str |> String.replace("/","_") |> String.replace(~r/[{}]/, "")
 
   #get all of the requestBody parameters first.
-  def get_checked_param_fetch(schema = %{"requestBody" => body_params}) do
+  def get_requestbody_params(schema = %{"requestBody" => body_params}) do
     converted_pathname = schema["path"] |> pathconv
     "requestparams = requestbody_parameter(conn, &__MODULE__.input_validation_#{converted_pathname})"
   end
+  def get_requestbody_params(), do: ""
 
   def get_checked_param_fetch(%{"required" => true, "in" => "path"}), do: nil
   def get_checked_param_fetch(param = %{"required" => true, "name" => name}), do: "{:ok, #{name}} <- " <> get_parameter_fetch_function(param)
@@ -237,6 +238,7 @@ defmodule Exaggerate.Codesynth.Routesynth do
     summary      = get_summary(route_def)
     code_paths   = get_responses(route_def["responses"], &get_response/2)
 
+    requestbody_params = get_requestbody_params(route_def)
     params_list  = get_params_list(route_def["parameters"])
     has_required_params = needs_with_block?(route_def["parameters"])
 
@@ -258,6 +260,7 @@ defmodule Exaggerate.Codesynth.Routesynth do
     """
     #{verb_string} "#{route_string}" do
       #{summary}
+      #{requestbody_params}
       #{checked_params}
       #{basic_params}
       case #{routemodule}.Web.Endpoint.#{operation}(conn#{params_list}) do
