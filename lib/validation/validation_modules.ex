@@ -433,10 +433,42 @@ end
 
 defmodule Exaggerate.Validation.Schema do
 
-  use Exaggerate.Validation.Helpers
+  #use Exaggerate.Validation.Helpers
 
-  def validate(_), do: :ok
-  #pass_validate()
+  #this is a temporary fix.  It scrubs the "special" schema modifications created by
+  #the openAPI validation rules.
+  def scrub_schema(schema = %{"format" => "int32"}),  do: Map.delete(schema, "format")
+  def scrub_schema(schema = %{"format" => "int64"}),  do: Map.delete(schema, "format")
+  def scrub_schema(schema = %{"format" => "float"}),  do: Map.delete(schema, "format")
+  def scrub_schema(schema = %{"format" => "double"}),  do: Map.delete(schema, "format")
+  def scrub_schema(schema = %{"format" => "byte"}),  do: Map.delete(schema, "format")
+  def scrub_schema(schema = %{"format" => "binary"}),  do: Map.delete(schema, "format")
+  def scrub_schema(schema = %{"format" => "date"}),  do: Map.delete(schema, "format")
+  def scrub_schema(schema = %{"format" => "dateTime"}),  do: Map.delete(schema, "format")
+  def scrub_schema(schema = %{"format" => "password"}),  do: Map.delete(schema, "format")
+  def scrub_schema(schema) when is_map(schema), do: scrub_schema(schema, [])
+  def scrub_schema(schema, arr) when is_map(schema) do
+    key_to_try = schema |> Map.keys
+                        |> Enum.find(fn k -> !(k in arr) end)
+    if key_to_try do
+      new_schema = Map.put(schema, key_to_try, scrub_schema(schema[key_to_try]))
+      scrub_schema(new_schema, [key_to_try | arr])
+    else
+      schema
+    end
+  end
+  def scrub_schema([]), do: []
+  def scrub_schema([head | tail]), do: [scrub_schema(head) | scrub_schema(tail)]
+  def scrub_schema(s), do: s
+
+  def validate(schema) do
+    res = with :ok <- Exonerate.Validation.validate(scrub_schema(schema)) do
+      :ok
+    else
+      {:error, err} -> {:error, Schema, err}
+    end
+    res
+  end
 end
 
 defmodule Exaggerate.Validation.Discriminator do
