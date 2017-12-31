@@ -70,7 +70,7 @@ defmodule Exaggerate.Codesynth.Endpointsynth do
   def build_endpoint(verb, route, route_def, _routemodule) when is_atom(verb) and is_binary(route) and is_map(route_def) do
 
     methodname = route_def["operationId"]
-    methodargs = get_params_list(route_def["parameters"])
+    methodargs = (if Map.has_key?(route_def, "requestBody"), do: ", requestbody", else: "") <> get_params_list(route_def["parameters"])
     param_comments = get_params_comm(route_def["parameters"])
 
     """

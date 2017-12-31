@@ -138,12 +138,11 @@ defmodule Exaggerate.Codesynth.Routesynth do
     checks if there are any required elements in the parameters list, which will
     trigger a with block in the elixir code.
   """
-  def needs_with_block?(%{"required" => true, "in" => "path"}), do: false
-  def needs_with_block?(%{"required" => true}), do: true
-  def needs_with_block?(%{}), do: false
-  def needs_with_block?([]), do: false
-  def needs_with_block?([head | tail]), do: needs_with_block?(head) || needs_with_block?(tail)
-  def needs_with_block?(nil), do: false
+  def checked_params?(%{"required" => true, "in" => "path"}), do: false
+  def checked_params?(%{"required" => true}), do: true
+  def checked_params?(%{}), do: false
+  def checked_params?(arr) when is_list(arr), do: Enum.any?(arr, &checked_params?/1)
+  def checked_params?(nil), do: false
 
   def required_param_or_nil(%{"required" => true, "name" => name}), do: name
   def required_param_or_nil(%{}), do: nil
@@ -198,30 +197,59 @@ defmodule Exaggerate.Codesynth.Routesynth do
   def pathconv(str), do: str |> String.replace("/","_") |> String.replace(~r/[{}]/, "")
 
   #get all of the requestBody parameters first.
-  def get_requestbody_params(schema = %{"requestBody" => body_params}) do
-    converted_pathname = schema["path"] |> pathconv
-    "requestparams = requestbody_parameter(conn, &__MODULE__.input_validation_#{converted_pathname})"
+  def get_requestbody_params(route, %{"requestBody" => body_params}) do
+    "{:ok, requestparams} <- Exaggerate.RouteFunctions.requestbody_parameter(conn, &__MODULE__.input_validation_#{pathconv(route)}/1)"
   end
-  def get_requestbody_params(), do: ""
+  def get_requestbody_params(_,_), do: nil
 
-  def get_checked_param_fetch(%{"required" => true, "in" => "path"}), do: nil
-  def get_checked_param_fetch(param = %{"required" => true, "name" => name}), do: "{:ok, #{name}} <- " <> get_parameter_fetch_function(param)
-  def get_checked_param_fetch(%{}), do: nil
-  def get_checked_param_fetch(nil), do: ""
-  def get_checked_param_fetch(arr) when is_list(arr) do
-    arr |> Enum.map(&Exaggerate.Codesynth.Routesynth.get_checked_param_fetch/1)
-        |> Enum.filter(& &1)
-        |> Enum.join(",\n")
-  end
+  def get_checked_params(%{"required" => true, "in" => "path"}), do: nil
+  def get_checked_params(param = %{"required" => true, "name" => name}), do: "{:ok, #{name}} <- " <> get_parameter_fetch_function(param)
+  def get_checked_params(%{}), do: nil
+  def get_checked_params(nil), do: [nil]
+  def get_checked_params(arr) when is_list(arr), do: arr |> Enum.map(&Exaggerate.Codesynth.Routesynth.get_checked_param_fetch/1)
 
-  def get_basic_param_fetch(%{"required" => true}), do: nil  #also filters out path parameters
-  def get_basic_param_fetch(param = %{"name" => name}), do: name <> " = " <> get_parameter_fetch_function(param)
-  def get_basic_param_fetch(%{}), do: nil
-  def get_basic_param_fetch(nil), do: ""
-  def get_basic_param_fetch(arr) when is_list(arr) do
+  def get_basic_params(%{"required" => true}), do: nil  #also filters out path parameters
+  def get_basic_params(param = %{"name" => name}), do: name <> " = " <> get_parameter_fetch_function(param)
+  def get_basic_params(%{}), do: nil
+  def get_basic_params(nil), do: ""
+  def get_basic_params(arr) when is_list(arr) do
     arr |> Enum.map(&Exaggerate.Codesynth.Routesynth.get_basic_param_fetch/1)
         |> Enum.filter(& &1)
         |> Enum.join("\n")
+  end
+
+  def with_block_parameters(route, route_def) do
+    [ get_requestbody_params(route, route_def) | get_checked_params(route_def["parameters"])] |> Enum.filter(& &1) |> Enum.join(",\n")
+  end
+
+  def validation_code(route, route_def) do
+
+    #make it so that we can convert a route into a variable name.
+    varpath = pathconv(route)
+
+    #generate all of the validators
+    validators = route_def["content"]
+      |> Enum.with_index
+      |> Enum.map(fn {{_k,v}, idx} -> Exonerate.Codesynth.validator_string(varpath <> "_#{idx}", v["schema"]) end)
+      |> Enum.join("\n\n")
+
+    #generate the mimetype selector.
+    type_selector = route_def["content"]
+      |> Enum.with_index
+      |> Enum.map(fn {{k,_v},idx} -> ~s("#{k}" -> validate_#{varpath}_#{idx}\(conn.body_params\)) end)
+      |> Enum.join("\n")
+
+    """
+      #{validators}
+
+      def input_validation_#{varpath}(conn) do
+        IO.inspect(conn)
+        case Plug.Conn.get_req_header(conn, "content-type") do
+          #{type_selector}
+          _ -> {:error, "unrecognized content-type"}
+        end
+      end
+    """
   end
 
   def build_route(verb, route, route_def, routemodule) when is_atom(verb) and is_binary(route) and is_map(route_def) do
@@ -238,13 +266,14 @@ defmodule Exaggerate.Codesynth.Routesynth do
     summary      = get_summary(route_def)
     code_paths   = get_responses(route_def["responses"], &get_response/2)
 
-    requestbody_params = get_requestbody_params(route_def)
-    params_list  = get_params_list(route_def["parameters"])
-    has_required_params = needs_with_block?(route_def["parameters"])
+    has_requestbody = Map.has_key?(route_def, "requestBody")
 
-    {checked_params, params_close} = if has_required_params do
+    params_list = if has_requestbody, do: ", requestbody" <> get_params_list(route_def["parameters"]), else: get_params_list(route_def["parameters"])
+    needs_with_block = checked_params?(route_def["parameters"]) || has_requestbody
+
+    {checked_params, params_close} = if needs_with_block do
       {"""
-        with #{get_checked_param_fetch(route_def["parameters"])} do
+        with #{with_block_parameters(route, route_def)} do
        """,
        """
        else
@@ -254,13 +283,14 @@ defmodule Exaggerate.Codesynth.Routesynth do
     else
       {"",""}
     end
-    basic_params = get_basic_param_fetch(route_def["parameters"])
+    basic_params = get_basic_params(route_def["parameters"])
+
+    validation_code = if (has_requestbody), do: validation_code(route, route_def["requestBody"]), else: ""
 
     #adlibbed route structure
     """
     #{verb_string} "#{route_string}" do
       #{summary}
-      #{requestbody_params}
       #{checked_params}
       #{basic_params}
       case #{routemodule}.Web.Endpoint.#{operation}(conn#{params_list}) do
@@ -269,6 +299,7 @@ defmodule Exaggerate.Codesynth.Routesynth do
       end
       #{params_close}
     end
+    #{validation_code}
     """ |> Code.format_string! |> Enum.join
   end
 end

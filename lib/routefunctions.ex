@@ -26,7 +26,7 @@ defmodule Exaggerate.RouteFunctions do
 
   def cookie_parameter(_conn, _param_name), do: throw("cookies parameters not currently supported")
 
-  def requestbody_parameter(conn, validation_fn), do: validation_fn.(conn)
+  def requestbody_parameter(conn, validation_fn), do: validation_fn.(conn.body_params)
 
   #deprecated parameters
   def body_parameter(conn, param_name), do: conn.body_params[param_name]
