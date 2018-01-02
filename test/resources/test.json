@@ -54,9 +54,9 @@
         "responses": {"200":{"description": "body parameter"}}
       }
     },
-    "/requestbodyparamsingleobject": {
+    "/requestbody_param_single_json": {
       "post": {
-        "operationId": "bodyparam",
+        "operationId": "requestbody_param_single_json",
         "description": "reflects the request body parameter",
         "requestBody": {
           "description": "single data",
@@ -65,7 +65,7 @@
               "schema": {
                 "type": "object",
                 "properties":{
-                  "stringdata":{"type":"string"}
+                  "data":{"type":"string"}
                 }
               }
             }

@@ -81,10 +81,13 @@ res=`curl http://localhost:4001/optionalqueryparam`
 res=`curl --data "param=value" -X POST http://localhost:4001/bodyparam`
 [ "$res" = "{\"body parameter\":\"value\"}" ]
 
+##requestbodyparam single object, json test
+res=`curl --data "{\"data\":\"test\"}" -X POST http://localhost:4001/requestbody_param_single_json`
+echo $res
+[ "$res" = "{\"request body parameter\":\"test\"}" ]
+
 pid=`cat /tmp/ex_pid`
 rm "/tmp/ex_pid"
 kill -KILL $pid
-
-rm -rf "/tmp/exaggeratetest"
 
 echo "TESTS PASSED."
