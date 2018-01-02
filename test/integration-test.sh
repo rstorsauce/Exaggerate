@@ -99,6 +99,17 @@ res=`curl --data "{\"data\":8}" -H "Content-Type: application/json" -X POST http
 res=`curl -X POST -F 'data=test' http://localhost:4001/requestbody_param_single_form`
 [ "$res" = "{\"request body parameter\":\"test\"}" ]
 
+##requestbodyparam multiple object, form data test
+
+res=`curl -X POST -F 'data=test' -F 'foo=bar' http://localhost:4001/requestbody_param_multiple_form`
+[ "$res" = "{\"request body parameters\":[\"test\",\"bar\"]}" ]
+
+##requestbodyparam file test
+
+echo "test" > test.txt
+res=`curl -X POST -f 'file=@/test.txt' http://localhost:4001/fileupload`
+
+
 pid=`cat /tmp/ex_pid`
 rm "/tmp/ex_pid"
 kill -KILL $pid
