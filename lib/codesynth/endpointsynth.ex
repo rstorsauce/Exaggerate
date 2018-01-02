@@ -73,7 +73,7 @@ defmodule Exaggerate.Codesynth.Endpointsynth do
     if methodname in defs_to_ignore do
       ""
     else
-      methodargs = (if Map.has_key?(route_def, "requestBody"), do: ", requestbody", else: "") <> get_params_list(route_def["parameters"])
+      methodargs = (if Map.has_key?(route_def, "requestBody"), do: ", requestparams", else: "") <> get_params_list(route_def["parameters"])
       param_comments = get_params_comm(route_def["parameters"])
 
       """
