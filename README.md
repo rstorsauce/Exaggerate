@@ -5,6 +5,13 @@
 
 Currently only supports JSON OpenAPI specs.
 
+Works in progress:
+
+- `mix swagger.update`
+- support for internal `$ref` structures
+- support for server definitions
+- code checking during `test` phases to ensure output complies with spec.
+
 ## Installation
 
 This library requires Elixir 1.6 (because of code prettification)

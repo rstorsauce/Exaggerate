@@ -54,8 +54,7 @@ fi
 
 mix run --no-halt &
 echo $! > /tmp/ex_pid
-
-sleep 5
+sleep 1
 
 ## ROOT TEST
 res=`curl http://localhost:4001/`
@@ -111,8 +110,30 @@ sleep 1
 res=`curl -X POST -F 'file=@test.txt' -F "data=test" http://localhost:4001/fileupload`
 [ "$res" = "{\"file content\":\"test\",\"body parameter\":\"test\"}" ]
 
+## mix swagger.update test
+## restart the server
 pid=`cat /tmp/ex_pid`
 rm "/tmp/ex_pid"
 kill -KILL $pid
+
+mix run --no-halt &
+echo $! > /tmp/ex_pid
+sleep 1
+
+#pull the swaggerfile.
+cp "$resource_dir/test-update.json" "./test.json"
+#swagger it up!
+mix swagger.update test.json
+
+#make sure one of the older paths still works.
+res=`curl http://localhost:4001/pathparam/value`
+[ "$res" = "{\"path parameter\":\"value\"}" ]
+
+sed -i "s/raise \"error: updateroute not implemented\"/{:ok, %{\"path parameter\" => param}}/" lib/test/endpoint.ex
+
+pid=`cat /tmp/ex_pid`
+rm "/tmp/ex_pid"
+kill -KILL $pid
+
 
 echo "TESTS PASSED."
