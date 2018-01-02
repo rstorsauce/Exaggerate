@@ -247,7 +247,7 @@ defmodule Exaggerate.Codesynth.Routesynth do
       def input_validation_#{varpath}(conn) do
         IO.inspect(conn)
         content_typelist = Plug.Conn.get_req_header(conn, "content-type")
-          |> IO.inspect(conn)
+          |> IO.inspect
         cond do
           #{type_selector}
           true -> {:error, "unrecognized content-type"}
