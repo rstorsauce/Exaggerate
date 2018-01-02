@@ -213,7 +213,7 @@ defmodule Exaggerate.Codesynth.Routesynth do
   def get_basic_params(%{}), do: nil
   def get_basic_params(nil), do: ""
   def get_basic_params(arr) when is_list(arr) do
-    arr |> Enum.map(&Exaggerate.Codesynth.Routesynth.get_basic_param_fetch/1)
+    arr |> Enum.map(&Exaggerate.Codesynth.Routesynth.get_basic_params/1)
         |> Enum.filter(& &1)
         |> Enum.join("\n")
   end
