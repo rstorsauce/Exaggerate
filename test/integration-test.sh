@@ -85,6 +85,15 @@ res=`curl --data "param=value" -X POST http://localhost:4001/bodyparam`
 res=`curl --data "{\"data\":\"test\"}" -H "Content-Type: application/json" -X POST http://localhost:4001/requestbody_param_single_json`
 [ "$res" = "{\"request body parameter\":\"test\"}" ]
 
+res=`curl --data "{}" -H "Content-Type: application/json" -X POST http://localhost:4001/requestbody_param_single_json`
+[ "$res" = "{\"request body parameter\":null}" ]
+
+res=`curl --data "{\"foo\":\"bar\"}" -H "Content-Type: application/json" -X POST http://localhost:4001/requestbody_param_single_json`
+[ "$res" = "{\"request body parameter\":null}" ]
+
+res=`curl --data "{\"data\":8}" -H "Content-Type: application/json" -X POST http://localhost:4001/requestbody_param_single_json`
+[ "$res" = "{\"422\":\"error: 8 does not conform to JSON schema\"}" ]
+
 pid=`cat /tmp/ex_pid`
 rm "/tmp/ex_pid"
 kill -KILL $pid
