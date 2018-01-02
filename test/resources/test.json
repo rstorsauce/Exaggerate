@@ -124,7 +124,12 @@
           "content": {
             "multipart/form-data": {
               "schema": {
-                "type": "object"
+                "type": "object",
+                "properties":{
+                  "data":{"type":"string"},
+                  "file":true
+                },
+                "required": ["data", "file"]
               }
             }
           }

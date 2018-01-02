@@ -107,8 +107,9 @@ res=`curl -X POST -F 'data=test' -F 'foo=bar' http://localhost:4001/requestbody_
 ##requestbodyparam file test
 
 echo "test" > test.txt
-res=`curl -X POST -f 'file=@/test.txt' http://localhost:4001/fileupload`
-
+sleep 1
+res=`curl -X POST -F 'file=@test.txt' -F "data=test" http://localhost:4001/fileupload`
+[ "$res" = "{\"file content\":\"test\",\"body parameter\":\"test\"}" ]
 
 pid=`cat /tmp/ex_pid`
 rm "/tmp/ex_pid"
