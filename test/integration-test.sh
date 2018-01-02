@@ -94,6 +94,11 @@ res=`curl --data "{\"foo\":\"bar\"}" -H "Content-Type: application/json" -X POST
 res=`curl --data "{\"data\":8}" -H "Content-Type: application/json" -X POST http://localhost:4001/requestbody_param_single_json`
 [ "$res" = "{\"422\":\"error: 8 does not conform to JSON schema\"}" ]
 
+##requestbodyparam single object, form data test
+
+res=`curl -X POST -F 'data=test' http://localhost:4001/requestbody_param_single_form`
+[ "$res" = "{\"request body parameter\":\"test\"}" ]
+
 pid=`cat /tmp/ex_pid`
 rm "/tmp/ex_pid"
 kill -KILL $pid

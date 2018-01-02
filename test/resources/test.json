@@ -74,6 +74,26 @@
         "responses": {"200":{"description": "body parameter"}}
       }
     },
+    "/requestbody_param_single_form": {
+      "post": {
+        "operationId": "requestbody_param_single_json",
+        "description": "reflects the request body parameter",
+        "requestBody": {
+          "description": "single data",
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties":{
+                  "data":{"type":"string"}
+                }
+              }
+            }
+          }
+        },
+        "responses": {"200":{"description": "body parameter"}}
+      }
+    },
     "/fileupload": {
       "post": {
         "operationId": "fileupload",
