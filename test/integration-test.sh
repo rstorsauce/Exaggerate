@@ -81,10 +81,38 @@ res=`curl http://localhost:4001/optionalqueryparam`
 res=`curl --data "param=value" -X POST http://localhost:4001/bodyparam`
 [ "$res" = "{\"body parameter\":\"value\"}" ]
 
+##requestbodyparam single object, json test
+res=`curl --data "{\"data\":\"test\"}" -H "Content-Type: application/json" -X POST http://localhost:4001/requestbody_param_single_json`
+[ "$res" = "{\"request body parameter\":\"test\"}" ]
+
+res=`curl --data "{}" -H "Content-Type: application/json" -X POST http://localhost:4001/requestbody_param_single_json`
+[ "$res" = "{\"request body parameter\":null}" ]
+
+res=`curl --data "{\"foo\":\"bar\"}" -H "Content-Type: application/json" -X POST http://localhost:4001/requestbody_param_single_json`
+[ "$res" = "{\"request body parameter\":null}" ]
+
+res=`curl --data "{\"data\":8}" -H "Content-Type: application/json" -X POST http://localhost:4001/requestbody_param_single_json`
+[ "$res" = "{\"422\":\"error: 8 does not conform to JSON schema\"}" ]
+
+##requestbodyparam single object, form data test
+
+res=`curl -X POST -F 'data=test' http://localhost:4001/requestbody_param_single_form`
+[ "$res" = "{\"request body parameter\":\"test\"}" ]
+
+##requestbodyparam multiple object, form data test
+
+res=`curl -X POST -F 'data=test' -F 'foo=bar' http://localhost:4001/requestbody_param_multiple_form`
+[ "$res" = "{\"request body parameters\":[\"test\",\"bar\"]}" ]
+
+##requestbodyparam file test
+
+echo "test" > test.txt
+sleep 1
+res=`curl -X POST -F 'file=@test.txt' -F "data=test" http://localhost:4001/fileupload`
+[ "$res" = "{\"file content\":\"test\",\"body parameter\":\"test\"}" ]
+
 pid=`cat /tmp/ex_pid`
 rm "/tmp/ex_pid"
 kill -KILL $pid
-
-rm -rf "/tmp/exaggeratetest"
 
 echo "TESTS PASSED."

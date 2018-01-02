@@ -54,11 +54,86 @@
         "responses": {"200":{"description": "body parameter"}}
       }
     },
+    "/requestbody_param_single_json": {
+      "post": {
+        "operationId": "requestbody_param_single_json",
+        "description": "reflects the request body parameter",
+        "requestBody": {
+          "description": "single data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties":{
+                  "data":{"type":"string"}
+                }
+              }
+            }
+          }
+        },
+        "responses": {"200":{"description": "body parameter"}}
+      }
+    },
+    "/requestbody_param_single_form": {
+      "post": {
+        "operationId": "requestbody_param_single_form",
+        "description": "reflects the request body parameter",
+        "requestBody": {
+          "description": "single data",
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties":{
+                  "data":{"type":"string"}
+                }
+              }
+            }
+          }
+        },
+        "responses": {"200":{"description": "body parameter"}}
+      }
+    },
+    "/requestbody_param_multiple_form": {
+      "post": {
+        "operationId": "requestbody_param_multiple_form",
+        "description": "reflects the request body parameter",
+        "requestBody": {
+          "description": "single data",
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties":{
+                  "data":{"type":"string"},
+                  "foo":{"type":"string"}
+                }
+              }
+            }
+          }
+        },
+        "responses": {"200":{"description": "body parameter"}}
+      }
+    },
     "/fileupload": {
       "post": {
         "operationId": "fileupload",
         "description": "reflects a file upload",
-        "parameters": [{"name":"file","in":"formData","required":true}],
+        "requestBody": {
+          "description": "single data",
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties":{
+                  "data":{"type":"string"},
+                  "file":true
+                },
+                "required": ["data", "file"]
+              }
+            }
+          }
+        },
         "responses": {"422":{"description": "invalid file sent"}}
       }
     }

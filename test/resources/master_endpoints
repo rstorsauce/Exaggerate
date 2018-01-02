@@ -13,8 +13,12 @@ defmodule Test.Web.Endpoint do
 
   def bodyparam(_conn, param), do: {:ok, %{"body parameter" => param}}
 
-  def fileupload(conn, file) do
-    IO.inspect(file)
-    {:ok, "ok"}
+  def requestbody_param_single_json(_conn, requestbody), do: {:ok, %{"request body parameter" => requestbody["data"]}}
+  def requestbody_param_single_form(_conn, requestbody), do: {:ok, %{"request body parameter" => requestbody["data"]}}
+  def requestbody_param_multiple_form(_conn, requestbody), do: {:ok, %{"request body parameters" => [requestbody["data"], requestbody["foo"]]}}
+
+  def fileupload(conn, requestbody) do
+    data = requestbody["data"]
+    {:ok, %{"body parameter" => data, "file content" => File.read!(requestbody["file"].path) |> String.trim}}
   end
 end

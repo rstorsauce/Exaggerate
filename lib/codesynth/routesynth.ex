@@ -206,14 +206,14 @@ defmodule Exaggerate.Codesynth.Routesynth do
   def get_checked_params(param = %{"required" => true, "name" => name}), do: "{:ok, #{name}} <- " <> get_parameter_fetch_function(param)
   def get_checked_params(%{}), do: nil
   def get_checked_params(nil), do: [nil]
-  def get_checked_params(arr) when is_list(arr), do: arr |> Enum.map(&Exaggerate.Codesynth.Routesynth.get_checked_param/1)
+  def get_checked_params(arr) when is_list(arr), do: arr |> Enum.map(&Exaggerate.Codesynth.Routesynth.get_checked_params/1)
 
   def get_basic_params(%{"required" => true}), do: nil  #also filters out path parameters
   def get_basic_params(param = %{"name" => name}), do: name <> " = " <> get_parameter_fetch_function(param)
   def get_basic_params(%{}), do: nil
   def get_basic_params(nil), do: ""
   def get_basic_params(arr) when is_list(arr) do
-    arr |> Enum.map(&Exaggerate.Codesynth.Routesynth.get_basic_param_fetch/1)
+    arr |> Enum.map(&Exaggerate.Codesynth.Routesynth.get_basic_params/1)
         |> Enum.filter(& &1)
         |> Enum.join("\n")
   end
@@ -236,17 +236,19 @@ defmodule Exaggerate.Codesynth.Routesynth do
     #generate the mimetype selector.
     type_selector = route_def["content"]
       |> Enum.with_index
-      |> Enum.map(fn {{k,_v},idx} -> ~s("#{k}" -> validate_#{varpath}_#{idx}\(conn.body_params\)) end)
+      |> Enum.map(fn {{k,_v},idx} -> ~s(Exaggerate.typematch\("#{k}", content_typelist\) -> Exaggerate.append_if_ok\(validate_#{varpath}_#{idx}\(conn.body_params\), conn.body_params\)) end)
       |> Enum.join("\n")
+
+    #TODO: implement better mimetype matching here, which allows for wildcards, e.g.
 
     """
       #{validators}
 
       def input_validation_#{varpath}(conn) do
-        IO.inspect(conn)
-        case Plug.Conn.get_req_header(conn, "content-type") do
+        content_typelist = Plug.Conn.get_req_header(conn, "content-type")
+        cond do
           #{type_selector}
-          _ -> {:error, "unrecognized content-type"}
+          true -> {:error, "unrecognized content-type"}
         end
       end
     """
@@ -268,7 +270,7 @@ defmodule Exaggerate.Codesynth.Routesynth do
 
     has_requestbody = Map.has_key?(route_def, "requestBody")
 
-    params_list = if has_requestbody, do: ", requestbody" <> get_params_list(route_def["parameters"]), else: get_params_list(route_def["parameters"])
+    params_list = if has_requestbody, do: ", requestparams" <> get_params_list(route_def["parameters"]), else: get_params_list(route_def["parameters"])
     needs_with_block = checked_params?(route_def["parameters"]) || has_requestbody
 
     {checked_params, params_close} = if needs_with_block do
