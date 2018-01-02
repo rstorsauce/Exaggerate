@@ -54,26 +54,22 @@ defmodule Exaggerate.Codesynth do
 
 
     #check to see if the module directory exists.
-    if update do
+    {route_content, endpoint_content} = if update do
       if !File.exists?(moduledir), do: raise("directory #{moduledir} does not exist; cannot update swaggerfile")
       if !File.dir?(moduledir),    do: raise("directory #{moduledir} does not exist; cannot update swaggerfile")
 
-      routefile = Path.join(moduledir, String.downcase(modulename) <> ".ex")
+      endpointfile = Path.join(moduledir, "endpoint.ex")
 
-      if !File.exists?(routefile), do: raise("file #{routefile} does not exist; cannot update swaggerfile")
+      if !File.exists?(endpointfile), do: raise("file #{endpointfile} does not exist; cannot update swaggerfile")
 
-      routefile_tokens = Code.format_file!(routefile)
+      endpointfile_tokens = Code.format_file!(endpointfile)
         |> fn [a | _b] -> a end.()  #format_file! returns a list of a list of tokens and a second value, throw away this second value.
 
       endpoint_content = swaggerfile_content
-        |> Exaggerate.Codesynth.Endpointsynth.build_endpointmodule(swaggerfile, modulename, get_defs(routefile_tokens))
-        |> insert_code(routefile_tokens)
+        |> Exaggerate.Codesynth.Endpointsynth.build_endpointmodule(swaggerfile, modulename, get_defs(endpointfile_tokens))
+        |> insert_code(endpointfile_tokens)
 
-      Path.join(moduledir, "router.ex")
-        |> File.write!(route_content)
-      Path.join(moduledir, "endpoint.ex")
-        |> File.write!(endpoint_content)
-
+      {route_content, endpoint_content}
     else
       if File.exists?(moduledir), do: raise("directory #{moduledir} exists; cannot create swaggerfile")
 
@@ -81,10 +77,12 @@ defmodule Exaggerate.Codesynth do
         |> Exaggerate.Codesynth.Endpointsynth.build_endpointmodule(swaggerfile, modulename)
 
       File.mkdir!(moduledir)
-      Path.join(moduledir, "router.ex")
-        |> File.write!(route_content)
-      Path.join(moduledir, "endpoint.ex")
-        |> File.write!(endpoint_content)
-    end
+
+      {route_content, endpoint_content}
   end
+
+  Path.join(moduledir, "router.ex")
+    |> File.write!(route_content)
+  Path.join(moduledir, "endpoint.ex")
+    |> File.write!(endpoint_content)
 end
