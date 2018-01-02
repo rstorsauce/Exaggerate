@@ -34,7 +34,8 @@ defmodule Exaggerate.Codesynth do
     IO.puts("==================")
     IO.puts(code_tokens |> Enum.join)
     IO.puts("------------------")
-    new_code = Enum.slice(code_tokens, 0..-3) ++ ["\n" | new_functions] ++ ["\n","end"] |> Enum.join
+    new_functions = "\n" <> new_functions
+    new_code = Enum.slice(code_tokens, 0..-3) ++ [new_functions] ++ ["\n","end"] |> Enum.join
     IO.puts(new_code)
     new_code |> Code.format_string! |> Enum.join
   end
