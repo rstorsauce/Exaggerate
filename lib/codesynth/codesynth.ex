@@ -74,11 +74,8 @@ defmodule Exaggerate.Codesynth do
       IO.inspect existing_defs
 
       #TODO:  consider refactoring build_routemodule to make this less opaque
-      endpoint_content = swaggerfile_content
-        |> Enum.map(fn {k,v} -> {k,v} end)
-        |> Enum.filter(fn {k,_v} -> !(k in existing_defs) end)
-        |> Enum.reduce(%{}, fn ({k,v}, m) -> Map.put(m, k, v) end)
-        |> Exaggerate.Codesynth.Endpointsynth.build_routes(modulename)
+      endpoint_content = swaggerfile_content["paths"]
+        |> Exaggerate.Codesynth.Endpoint.build_endpoints(modulename, existing_defs)
         |> insert_code(endpointfile_tokens)
 
       {route_content, endpoint_content}
