@@ -236,7 +236,7 @@ defmodule Exaggerate.Codesynth.Routesynth do
     #generate the mimetype selector.
     type_selector = route_def["content"]
       |> Enum.with_index
-      |> Enum.map(fn {{k,_v},idx} -> ~s("#{k}" in content_typelist -> Exaggerate.append_if_ok\(validate_#{varpath}_#{idx}\(conn.body_params\), conn_body_params\)) end)
+      |> Enum.map(fn {{k,_v},idx} -> ~s("#{k}" in content_typelist -> Exaggerate.append_if_ok\(validate_#{varpath}_#{idx}\(conn.body_params\), conn.body_params\)) end)
       |> Enum.join("\n")
 
     #TODO: implement better mimetype matching here, which allows for wildcards, e.g.
