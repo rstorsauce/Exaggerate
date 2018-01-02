@@ -236,7 +236,7 @@ defmodule Exaggerate.Codesynth.Routesynth do
     #generate the mimetype selector.
     type_selector = route_def["content"]
       |> Enum.with_index
-      |> Enum.map(fn {{k,_v},idx} -> ~s("#{k}" in content_typelist -> Exaggerate.append_if_ok\(validate_#{varpath}_#{idx}\(conn.body_params\), conn.body_params\)) end)
+      |> Enum.map(fn {{k,_v},idx} -> ~s(Exaggerate.typematch("#{k}", content_typelist) -> Exaggerate.append_if_ok\(validate_#{varpath}_#{idx}\(conn.body_params\), conn.body_params\)) end)
       |> Enum.join("\n")
 
     #TODO: implement better mimetype matching here, which allows for wildcards, e.g.
@@ -245,9 +245,7 @@ defmodule Exaggerate.Codesynth.Routesynth do
       #{validators}
 
       def input_validation_#{varpath}(conn) do
-        IO.inspect(conn)
         content_typelist = Plug.Conn.get_req_header(conn, "content-type")
-          |> IO.inspect
         cond do
           #{type_selector}
           true -> {:error, "unrecognized content-type"}
