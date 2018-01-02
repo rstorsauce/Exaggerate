@@ -268,7 +268,7 @@ defmodule Exaggerate.Codesynth.Routesynth do
 
     has_requestbody = Map.has_key?(route_def, "requestBody")
 
-    params_list = if has_requestbody, do: ", requestbody" <> get_params_list(route_def["parameters"]), else: get_params_list(route_def["parameters"])
+    params_list = if has_requestbody, do: ", requestparams" <> get_params_list(route_def["parameters"]), else: get_params_list(route_def["parameters"])
     needs_with_block = checked_params?(route_def["parameters"]) || has_requestbody
 
     {checked_params, params_close} = if needs_with_block do
