@@ -69,8 +69,13 @@ defmodule Exaggerate.Codesynth do
       endpointfile_tokens = Code.format_file!(endpointfile)
         |> fn [a | _b] -> a end.()  #format_file! returns a list of a list of tokens and a second value, throw away this second value.
 
+      existing_defs = get_defs(endpointfile_tokens)
+
+      IO.puts("existing defs:")
+      IO.inspect existing_defs
+
       endpoint_content = swaggerfile_content
-        |> Exaggerate.Codesynth.Endpointsynth.build_endpointmodule(swaggerfile, modulename, get_defs(endpointfile_tokens))
+        |> Exaggerate.Codesynth.Endpointsynth.build_endpointmodule(swaggerfile, modulename, existing_defs)
         |> insert_code(endpointfile_tokens)
 
       {route_content, endpoint_content}
