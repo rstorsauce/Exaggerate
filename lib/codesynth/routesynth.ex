@@ -246,7 +246,9 @@ defmodule Exaggerate.Codesynth.Routesynth do
         IO.inspect(conn)
         case Plug.Conn.get_req_header(conn, "content-type") do
           #{type_selector}
-          _ -> {:error, "unrecognized content-type"}
+          val ->
+            IO.inspect(val) 
+            {:error, "unrecognized content-type"}
         end
       end
     """

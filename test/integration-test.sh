@@ -82,8 +82,7 @@ res=`curl --data "param=value" -X POST http://localhost:4001/bodyparam`
 [ "$res" = "{\"body parameter\":\"value\"}" ]
 
 ##requestbodyparam single object, json test
-res=`curl --data "{\"data\":\"test\"}" -X POST http://localhost:4001/requestbody_param_single_json`
-echo $res
+res=`curl --data "{\"data\":\"test\"}" -H "Content-Type: application/json" -X POST http://localhost:4001/requestbody_param_single_json`
 [ "$res" = "{\"request body parameter\":\"test\"}" ]
 
 pid=`cat /tmp/ex_pid`
