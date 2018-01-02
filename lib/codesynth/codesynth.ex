@@ -31,7 +31,7 @@ defmodule Exaggerate.Codesynth do
   def get_defs([_head | tail], :no), do: get_defs(tail)
 
   def insert_code(new_functions, code_tokens) do
-    new_code = Enum.slice(code_tokens, 0..-3) ++ [new_functions] ++ ["\n","end"]
+    new_code = Enum.slice(code_tokens, 0..-3) ++ [new_functions] ++ ["\n","end"] |> Enum.join
     new_code |> Code.format_string! |> Enum.join
   end
 
