@@ -56,7 +56,6 @@ defmodule Exaggerate.Codesynth do
     route_content = swaggerfile_content
       |> Exaggerate.Codesynth.Routesynth.build_routemodule(swaggerfile, modulename)
 
-
     #check to see if the module directory exists.
     {route_content, endpoint_content} = if update do
       if !File.exists?(moduledir), do: raise("directory #{moduledir} does not exist; cannot update swaggerfile")
@@ -74,8 +73,12 @@ defmodule Exaggerate.Codesynth do
       IO.puts("existing defs:")
       IO.inspect existing_defs
 
+      #TODO:  consider refactoring build_routemodule to make this less opaque
       endpoint_content = swaggerfile_content
-        |> Exaggerate.Codesynth.Endpointsynth.build_endpointmodule(swaggerfile, modulename, existing_defs)
+        |> Enum.map(fn {k,v} -> {k,v} end)
+        |> Enum.filter(fn {k,_v} -> !(k in existing_defs) end)
+        |> Enum.reduce(%{}, fn ({k,v}, m) -> Map.put(m, k, v) end)
+        |> Exaggerate.Codesynth.Endpointsynth.build_routes(modulename)
         |> insert_code(endpointfile_tokens)
 
       {route_content, endpoint_content}
