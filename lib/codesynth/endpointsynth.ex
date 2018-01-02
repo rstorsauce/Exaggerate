@@ -12,16 +12,17 @@ defmodule Exaggerate.Codesynth.Endpointsynth do
   end
 
   def build_endpoints(routelist, modulename, defs_to_ignore) when is_map(routelist) do
-    routelist |> Map.keys
-      |> Enum.filter(fn x -> !(x in defs_to_ignore) end)
-      |> Enum.map(fn route ->
-        routelist[route] |> Map.keys
-          |> Enum.map(fn verb ->
+    routelist
+      |> Enum.filter(fn {k, _v}-> !(k in defs_to_ignore) end)
+      |> Enum.map(fn {route, routedef} ->
+        routedef
+          |> Enum.map(fn {verb, verbdef} ->
             verb |> String.to_atom
-                 |> Exaggerate.Codesynth.Endpointsynth.build_endpoint(route, routelist[route][verb], modulename)
+                 |> Exaggerate.Codesynth.Endpointsynth.build_endpoint(route, verbdef, modulename)
           end)
-      end) |> List.flatten
-           |> Enum.join("\n\n")
+      end)
+      |> List.flatten
+      |> Enum.join("\n\n")
   end
 
   def optional_param?(%{"required" => true}), do: false
