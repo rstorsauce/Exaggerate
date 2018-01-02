@@ -206,7 +206,7 @@ defmodule Exaggerate.Codesynth.Routesynth do
   def get_checked_params(param = %{"required" => true, "name" => name}), do: "{:ok, #{name}} <- " <> get_parameter_fetch_function(param)
   def get_checked_params(%{}), do: nil
   def get_checked_params(nil), do: [nil]
-  def get_checked_params(arr) when is_list(arr), do: arr |> Enum.map(&Exaggerate.Codesynth.Routesynth.get_checked_param/1)
+  def get_checked_params(arr) when is_list(arr), do: arr |> Enum.map(&Exaggerate.Codesynth.Routesynth.get_checked_params/1)
 
   def get_basic_params(%{"required" => true}), do: nil  #also filters out path parameters
   def get_basic_params(param = %{"name" => name}), do: name <> " = " <> get_parameter_fetch_function(param)
