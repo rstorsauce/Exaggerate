@@ -35,6 +35,8 @@ defmodule Exaggerate.Codesynth do
     new_code |> Code.format_string! |> Enum.join
   end
 
+  def updateswaggerfile(swaggerfile), do: buildswaggerfile(swaggerfile, true)
+
   def buildswaggerfile(swaggerfile, update \\ false) do
     #first, find the .json extension
     modulename = (if String.match?(swaggerfile, ~r/.json$/), do: String.slice(swaggerfile, 0..-6), else: swaggerfile)
