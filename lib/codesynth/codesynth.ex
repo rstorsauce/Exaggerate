@@ -79,10 +79,11 @@ defmodule Exaggerate.Codesynth do
       File.mkdir!(moduledir)
 
       {route_content, endpoint_content}
-  end
+    end
 
-  Path.join(moduledir, "router.ex")
-    |> File.write!(route_content)
-  Path.join(moduledir, "endpoint.ex")
-    |> File.write!(endpoint_content)
+    Path.join(moduledir, "router.ex")
+      |> File.write!(route_content)
+    Path.join(moduledir, "endpoint.ex")
+      |> File.write!(endpoint_content)
+  end
 end
