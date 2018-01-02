@@ -75,7 +75,7 @@ defmodule Exaggerate.Codesynth do
 
       #TODO:  consider refactoring build_routemodule to make this less opaque
       endpoint_content = swaggerfile_content["paths"]
-        |> Exaggerate.Codesynth.Endpoint.build_endpoints(modulename, existing_defs)
+        |> Exaggerate.Codesynth.Endpointsynth.build_endpoints(modulename, existing_defs)
         |> insert_code(endpointfile_tokens)
 
       {route_content, endpoint_content}
