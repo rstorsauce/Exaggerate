@@ -52,10 +52,16 @@ defmodule Exaggerate.Codesynth do
     route_content = swaggerfile_content
       |> Exaggerate.Codesynth.Routesynth.build_routemodule(swaggerfile, modulename)
 
+
+    routerfile = Path.join(moduledir, "router.ex")
+
     #check to see if the module directory exists.
-    {route_content, endpoint_content} = if update do
+    endpoint_content = if update do
       if !File.exists?(moduledir), do: raise("directory #{moduledir} does not exist; cannot update swaggerfile")
       if !File.dir?(moduledir),    do: raise("directory #{moduledir} does not exist; cannot update swaggerfile")
+
+      #remove the routerfile.
+      if File.exists?(routerfile), do: File.rm!(routerfile)
 
       endpointfile = Path.join(moduledir, "endpoint.ex")
 
@@ -74,7 +80,7 @@ defmodule Exaggerate.Codesynth do
         |> Exaggerate.Codesynth.Endpointsynth.build_endpoints(modulename, existing_defs)
         |> insert_code(endpointfile_tokens)
 
-      {route_content, endpoint_content}
+      endpoint_content
     else
       if File.exists?(moduledir), do: raise("directory #{moduledir} exists; cannot create swaggerfile")
 
@@ -83,10 +89,10 @@ defmodule Exaggerate.Codesynth do
 
       File.mkdir!(moduledir)
 
-      {route_content, endpoint_content}
+      endpoint_content
     end
 
-    Path.join(moduledir, "router.ex")
+    routerfile
       |> File.write!(route_content)
     Path.join(moduledir, "endpoint.ex")
       |> File.write!(endpoint_content)
