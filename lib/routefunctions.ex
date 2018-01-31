@@ -110,7 +110,7 @@ defmodule Exaggerate.RouteFunctions do
       {:html, mimetype}  -> {code, Exaggerate.HTMLEncode.encode!(map), mimetype}
       {:error, errormsg} -> {415, errormsg, "text/html"}
     end
-    conn |> update_resp_header!("Content-Type", mimetype, fn _ -> mimetype end)
+    conn |> update_resp_header("Content-Type", mimetype, fn _ -> mimetype end)
          |> send_resp(new_code, encoded_res)
   end
 
@@ -121,7 +121,7 @@ defmodule Exaggerate.RouteFunctions do
       {:html, mimetype} -> {code, Exaggerate.HTMLEncode.bodyonly(text), mimetype}
       {:error, errormsg} -> {415, errormsg, "text/html"}
     end
-    conn |> update_resp_header!("Content-Type", mimetype, fn _ -> mimetype end)
+    conn |> update_resp_header("Content-Type", mimetype, fn _ -> mimetype end)
          |> send_resp(new_code, encoded_res)
   end
 
