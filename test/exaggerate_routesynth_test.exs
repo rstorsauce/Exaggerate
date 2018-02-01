@@ -111,6 +111,26 @@ defmodule ExaggerateCodesynthIntegrationTest do
       :get, "/b201")
   end
 
+  test "two_error_conditions" do
+    codesynth_match(
+    %{"operationId" => "twoerror",
+      "responses" => %{"400" => %{"description" => "error1"}, "500" => %{"description" => "error2"}}},
+    """
+    get "/twoerror" do
+      case TestModule.Web.Endpoint.twoerror(conn) do
+        # handles error1.
+        {:error, 400, details} -> send_formatted(conn, 400, %{"400" => "error1: " <> details})
+        # handles error2.
+        {:error, 500, details} -> send_formatted(conn, 500, %{"500" => "error2: " <> details})
+
+        {:ok, content} -> send_formatted(conn, 200, content)
+        _ -> send_resp(conn, 400, "")
+      end
+    end
+    """,
+    :get, "/twoerror")
+  end
+
   test "get with complex 404 error response" do
 
     codesynth_match(

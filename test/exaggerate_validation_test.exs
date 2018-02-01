@@ -109,17 +109,6 @@ defmodule ExaggerateBasicValidationTest do
   test "verifying swaggerfile fails on nonsense string" do
     refute Exaggerate.Codesynth.swaggerfile_exists?("naothuenoth")
   end
-  #test "verifying swaggerfile succeeds on a file that exists in the root directory" do
-  #  assert Exaggerate.Codesynth.swaggerfile_exists?("mix.exs")
-  #end
-  #test "verifying swaggerfile succeeds on a file that is a json file" do
-  #  assert Exaggerate.Codesynth.swaggerfile_exists?("basic.json")
-  #end
-
-  #test "invalid json fails on swagger validation test" do
-  #  refute Exaggerate.Codesynth.swaggerfile_isvalidate("basic.json") == :ok
-  #end
-
 end
 
 defmodule ExaggeratePetstoreValidationTest do

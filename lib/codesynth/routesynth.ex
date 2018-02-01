@@ -112,7 +112,7 @@ defmodule Exaggerate.Codesynth.Routesynth do
 
   ##############################################################################
   ## error responses
-  def get_response(http_code = "2" <> <<_::size(16)>>, response_map = %{"description" => response_desc}) do
+  def get_response(http_code = "2" <> <<_::size(16)>>, _response_map = %{"description" => response_desc}) do
     #check that this error_val corresponds to a http response number.
     {_number, _} = Integer.parse(http_code)
     #figure out content validation later, using compile-time schemas.
@@ -122,6 +122,15 @@ defmodule Exaggerate.Codesynth.Routesynth do
     """
   end
   def get_response(error_code = "4" <> <<_::size(16)>>, _error_map = %{"description" => error_desc}) do
+    #check that this error_val corresponds to a http response number.
+    {_number, _} = Integer.parse(error_code)
+    #a simple error reporting, using the description.
+    """
+    #handles #{error_desc}.
+    {:error, #{error_code}, details} -> send_formatted(conn, #{error_code}, %{\"#{error_code}\" => \"#{error_desc}: \" <> details})
+    """
+  end
+  def get_response(error_code = "5" <> <<_::size(16)>>, _error_map = %{"description" => error_desc}) do
     #check that this error_val corresponds to a http response number.
     {_number, _} = Integer.parse(error_code)
     #a simple error reporting, using the description.
