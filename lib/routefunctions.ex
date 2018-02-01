@@ -47,6 +47,7 @@ defmodule Exaggerate.RouteFunctions do
     s |> String.split(",")
       |> Enum.map(fn x -> x |> String.split(";") |> Enum.at(0) end)
   end
+  def process_response_string([]), do: ["*/*"]
 
   @doc """
     assigns the desired response string based on a content-type string list.
