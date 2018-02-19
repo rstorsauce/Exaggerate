@@ -103,7 +103,7 @@ defmodule Exaggerate.RouteFunctions do
   end
   def send_formatted(conn, code, %{:file => filename}), do: send_file(conn, code, filename)
 
-  def send_formatted(conn, code, map) when is_map(map) do
+  def send_formatted(conn, code, map) when is_map(map) or is_list(map) do
     {new_code, encoded_res, mimetype} = case response_type(conn) do
       #:xml ->  {XMLEncoder.encode!(map),  }
       {:json, mimetype}  -> {code, Poison.encode!(map), mimetype}

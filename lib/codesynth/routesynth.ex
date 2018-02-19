@@ -118,7 +118,7 @@ defmodule Exaggerate.Codesynth.Routesynth do
     #figure out content validation later, using compile-time schemas.
     """
     #handles #{response_desc}.
-    {:ok, #{http_code}, details} -> send_formatted(conn, #{http_code}, %{\"#{http_code}\" => \"#{response_desc}: \" <> details})
+    {:ok, #{http_code}, details} -> send_formatted(conn, #{http_code}, details)
     """
   end
   def get_response(error_code = "4" <> <<_::size(16)>>, _error_map = %{"description" => error_desc}) do
