@@ -98,10 +98,18 @@ defmodule Exaggerate.RouteFunctions do
     send_formatted(conn, code, text)                 -> text (possibly detecting XML)
   """
   def send_formatted(conn, code, [file: filename, mimetype: mimetype]) do
-    conn |> update_resp_header("Content-Type", mimetype, fn _ -> mimetype end)
-         |> send_file(code, filename)
+    basename = Path.basename(filename)
+    conn
+    |> update_resp_header("Content-Type", mimetype, fn _ -> mimetype end)
+    |> put_resp_header("Content-Disposition", "inline; filename=\"#{basename}\"")
+    |> send_file(code, filename)
   end
-  def send_formatted(conn, code, [file: filename]), do: send_file(conn, code, filename)
+  def send_formatted(conn, code, [file: filename]) do
+    basename = Path.basename(filename)
+    conn
+    |> put_resp_header("Content-Disposition", "inline; filename=\"#{basename}\"")
+    |> send_file(code, filename)
+  end
 
   def send_formatted(conn, code, map) when is_map(map) or is_list(map) do
     {new_code, encoded_res, mimetype} = case response_type(conn) do
