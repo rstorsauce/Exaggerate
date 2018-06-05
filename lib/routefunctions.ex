@@ -16,7 +16,7 @@ end
 defmodule Exaggerate.RouteFunctions do
 
   import Exaggerate.RouteFunctions.Helpers
-  import Plug.Conn, only: [update_resp_header: 4, send_resp: 3, send_file: 3, get_req_header: 2]
+  import Plug.Conn, only: [update_resp_header: 4, put_resp_header: 3, send_resp: 3, send_file: 3, get_req_header: 2]
 
   route_options [:body_parameter, :query_parameter, :cookie_parameter, :formData_parameter]
 
