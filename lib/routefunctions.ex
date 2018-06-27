@@ -83,7 +83,7 @@ defmodule Exaggerate.RouteFunctions do
   def match_response_string([], nil), do: {:error, "no matching mimetype"}
 
   def response_type(conn) do
-    conn |> get_req_header("accept")
+    conn |> get_req_header("Accept")
       |> process_response_string
       |> match_response_string
   end
