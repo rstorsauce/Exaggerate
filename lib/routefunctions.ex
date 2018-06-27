@@ -73,7 +73,10 @@ defmodule Exaggerate.RouteFunctions do
 
   def match_response_string(["text/plain" | tail], best), do: match_response_string(tail, best || "text/plain")
   def match_response_string(["application/xhtml+xml" | tail], best), do: match_response_string(tail, best || "application/xhtml+xml")
-  def match_response_string(["*/*" | tail], best), do: match_response_string(tail, best || "*/*")
+  def match_response_string(["*/*" | tail], best) do
+    frankenbug = best || "*/*"
+    match_response_string(tail, best || "*/*")
+  end
 
   #unrecognized response types pass on "best"
   def match_response_string([_ | tail], best), do: match_response_string(tail, best)
