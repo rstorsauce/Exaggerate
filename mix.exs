@@ -20,7 +20,7 @@ defmodule Exaggerate.Mixfile do
     [
       {:exonerate, git: "https://github.com/rstorsauce/exonerate.git"},
       {:poison, "~> 3.1"},
-      {:plug, "~> 1.4"}
+      {:plug, "~> 1.4"},
     ]
   end
 end

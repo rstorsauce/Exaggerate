@@ -86,7 +86,7 @@ defmodule Exaggerate.RouteFunctions do
   def match_response_string([], nil), do: {:error, "no matching mimetype"}
 
   def response_type(conn) do
-    conn |> get_req_header("Accept")
+    conn |> get_req_header("accept")
       |> process_response_string
       |> match_response_string
   end
@@ -103,14 +103,14 @@ defmodule Exaggerate.RouteFunctions do
   def send_formatted(conn, code, [file: filename, mimetype: mimetype]) do
     basename = Path.basename(filename)
     conn
-    |> update_resp_header("Content-Type", mimetype, fn _ -> mimetype end)
-    |> put_resp_header("Content-Disposition", "inline; filename=\"#{basename}\"")
+    |> update_resp_header("content-type", mimetype, fn _ -> mimetype end)
+    |> put_resp_header("content-disposition", "inline; filename=\"#{basename}\"")
     |> send_file(code, filename)
   end
   def send_formatted(conn, code, [file: filename]) do
     basename = Path.basename(filename)
     conn
-    |> put_resp_header("Content-Disposition", "inline; filename=\"#{basename}\"")
+    |> put_resp_header("content-disposition", "inline; filename=\"#{basename}\"")
     |> send_file(code, filename)
   end
 
@@ -122,7 +122,7 @@ defmodule Exaggerate.RouteFunctions do
       {:html, mimetype}  -> {code, Exaggerate.HTMLEncode.encode!(map), mimetype}
       {:error, errormsg} -> {415, errormsg, "text/html"}
     end
-    conn |> update_resp_header("Content-Type", mimetype, fn _ -> mimetype end)
+    conn |> update_resp_header("content-type", mimetype, fn _ -> mimetype end)
          |> send_resp(new_code, encoded_res)
   end
 
@@ -133,7 +133,7 @@ defmodule Exaggerate.RouteFunctions do
       {:html, mimetype} -> {code, Exaggerate.HTMLEncode.bodyonly(text), mimetype}
       {:error, errormsg} -> {415, errormsg, "text/html"}
     end
-    conn |> update_resp_header("Content-Type", mimetype, fn _ -> mimetype end)
+    conn |> update_resp_header("content-type", mimetype, fn _ -> mimetype end)
          |> send_resp(new_code, encoded_res)
   end
 
