@@ -72,9 +72,6 @@ defmodule Exaggerate.Codesynth do
 
       existing_defs = get_defs(endpointfile_tokens)
 
-      IO.puts("existing defs:")
-      IO.inspect existing_defs
-
       #TODO:  consider refactoring build_routemodule to make this less opaque
       endpoint_content = swaggerfile_content["paths"]
         |> Exaggerate.Codesynth.Endpointsynth.build_endpoints(modulename, existing_defs)

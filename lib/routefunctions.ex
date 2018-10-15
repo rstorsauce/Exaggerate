@@ -85,11 +85,13 @@ defmodule Exaggerate.RouteFunctions do
   def match_response_string([], "text/html"), do: {:html, "text/html"}
   def match_response_string([], nil), do: {:error, "no matching mimetype"}
 
-  def response_type(conn) do
+  def response_type(conn = %Conn{req_headers: _}) do
     conn |> get_req_header("accept")
       |> process_response_string
       |> match_response_string
   end
+  # default to json.
+  def response_type(_), do: {:json, "application/json"}
 
   @doc """
     examines the content and sends an response of the appropriate type based on
