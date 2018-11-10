@@ -84,7 +84,7 @@ defmodule ExaggerateCodesynthIntegrationTest do
       get "/b200" do
         case TestModule.Web.Endpoint.b200(conn) do
           # handles general success.
-          {:ok, 200, details} -> send_formatted(conn, 200, %{"200" => "general success: " <> details})
+          {:ok, 200, details} -> send_formatted(conn, 200, details)
           {:ok, content} -> send_formatted(conn, 200, content)
           _ -> send_resp(conn, 400, "")
         end
@@ -102,7 +102,7 @@ defmodule ExaggerateCodesynthIntegrationTest do
       get "/b201" do
         case TestModule.Web.Endpoint.b201(conn) do
           # handles resource created.
-          {:ok, 201, details} -> send_formatted(conn, 201, %{"201" => "resource created: " <> details})
+          {:ok, 201, details} -> send_formatted(conn, 201, details)
           {:ok, content} -> send_formatted(conn, 200, content)
           _ -> send_resp(conn, 400, "")
         end

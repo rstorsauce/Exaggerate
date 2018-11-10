@@ -164,7 +164,10 @@ defmodule Exaggerate.Validation.Operation do
   #TODO:  make sure responses meets the patterned definition
 
   def further_validation(%{"parameters" => params}) do
-    duplicate_parameters = (params |> Enum.map(fn p -> p["name"] end) |> Exaggerate.Validation.duplicates)
+    duplicate_parameters = params
+    |> Enum.map(fn p -> p["name"] end)
+    |> Exaggerate.Validation.duplicates
+
     if duplicate_parameters do
       {:error, Operation, "parameters has duplicates: #{duplicate_parameters}"}
     else

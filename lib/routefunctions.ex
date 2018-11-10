@@ -119,8 +119,8 @@ defmodule Exaggerate.RouteFunctions do
   def send_formatted(conn, code, map) when is_map(map) or is_list(map) do
     {new_code, encoded_res, mimetype} = case response_type(conn) do
       #:xml ->  {XMLEncoder.encode!(map),  }
-      {:json, mimetype}  -> {code, Poison.encode!(map), mimetype}
-      {:text, mimetype}  -> {code, Poison.encode!(map), mimetype}
+      {:json, mimetype}  -> {code, Jason.encode!(map), mimetype}
+      {:text, mimetype}  -> {code, Jason.encode!(map), mimetype}
       {:html, mimetype}  -> {code, Exaggerate.HTMLEncode.encode!(map), mimetype}
       {:error, errormsg} -> {415, errormsg, "text/html"}
     end
@@ -130,7 +130,7 @@ defmodule Exaggerate.RouteFunctions do
 
   def send_formatted(conn, code, text) when is_binary(text) do
     {new_code, encoded_res, mimetype} = case response_type(conn) do
-      {:json, mimetype} -> {code, Poison.encode!(%{"text" => text}), mimetype}
+      {:json, mimetype} -> {code, Jason.encode!(%{"text" => text}), mimetype}
       {:text, mimetype} -> {code, text, mimetype}
       {:html, mimetype} -> {code, Exaggerate.HTMLEncode.bodyonly(text), mimetype}
       {:error, errormsg} -> {415, errormsg, "text/html"}

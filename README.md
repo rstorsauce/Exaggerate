@@ -86,4 +86,4 @@ from the swaggerfile prefix.
 
 ## response encoding.
 
-the default response encoding for JSON is Poison.
+the default response encoding for JSON is Jason.

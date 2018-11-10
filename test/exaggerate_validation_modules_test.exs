@@ -2,7 +2,7 @@ defmodule Validation.Helper do
   defmacro __using__(_args) do
     quote do
       import Validation.Helper
-      require Poison
+      require Jason
     end
   end
 
@@ -40,7 +40,7 @@ defmodule ExaggerateInfoUnitTest do
   },
   "version": "1.0.1"
   }
-  """ |> Poison.decode!
+  """ |> Jason.decode!
 
   test "sample info passes" do
     passes Info, @infobase
@@ -80,7 +80,7 @@ defmodule ExaggerateContactUnitTest do
     "url": "http://www.example.com/support",
     "email": "support@example.com"
   }
-  """ |> Poison.decode!
+  """ |> Jason.decode!
 
   test "sample contact passes" do
     passes Contact, @contactbase
@@ -108,7 +108,7 @@ defmodule ExaggerateLicenseUnitTest do
     "name": "Apache 2.0",
     "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
   }
-  """ |> Poison.decode!
+  """ |> Jason.decode!
 
   test "sample license passes" do
     passes License, @licensebase
@@ -137,7 +137,7 @@ defmodule ExaggerateServerUnitTest do
     "url": "https://development.gigantic-server.com/v1",
     "description": "Development server"
   }
-  """ |> Poison.decode!
+  """ |> Jason.decode!
 
   test "sample basic server passes" do
     passes Server, @basicserverbase
@@ -177,7 +177,7 @@ defmodule ExaggerateServerUnitTest do
       }
     }
   }
-  """ |> Poison.decode!
+  """ |> Jason.decode!
 
   test "sample variable server passes" do
     passes Server, @variableserverbase
@@ -198,7 +198,7 @@ defmodule ExaggerateServerVariableUnitTest do
     "default": "demo",
     "description": "this value is assigned by the service provider, in this example `gigantic-server.com`"
   }
-  """ |> Poison.decode!
+  """ |> Jason.decode!
 
   test "sample servervariable passes" do
     passes ServerVariable, @servervariablebase
@@ -285,7 +285,7 @@ defmodule ExaggerateOperationUnitTest do
       }
     ]
   }
-  """ |> Poison.decode!
+  """ |> Jason.decode!
 
 
   test "sample operation passes" do
@@ -329,7 +329,7 @@ defmodule ExaggerateExternalDocUnitTest do
     "description": "Find more info here",
     "url": "https://example.com"
   }
-  """ |> Poison.decode!
+  """ |> Jason.decode!
 
 
   test "sample externaldoc passes" do
@@ -369,7 +369,7 @@ defmodule ExaggerateParamUnitTest do
     },
     "style": "simple"
   }
-  """ |> Poison.decode!
+  """ |> Jason.decode!
 
 
   test "sample header parameter passes" do
@@ -408,7 +408,7 @@ defmodule ExaggerateParamUnitTest do
       "type": "string"
     }
   }
-  """ |> Poison.decode!
+  """ |> Jason.decode!
 
   test "sample path parameter passes" do
     passes Parameter, @stringpathparambase
@@ -476,7 +476,7 @@ defmodule ExaggerateRequestBodyUnitTest do
       }
     }
   }
-  """ |> Poison.decode!
+  """ |> Jason.decode!
 
 
   test "sample request body parameter passes" do
@@ -537,7 +537,7 @@ defmodule ExaggerateMediatypeUnitTest do
       }
     }
   }
-  """ |> Poison.decode!
+  """ |> Jason.decode!
 
 
   test "sample mediatype parameter passes" do
@@ -574,7 +574,7 @@ defmodule ExaggerateEncodingUnitTest do
       }
     }
   }
-  """ |> Poison.decode!
+  """ |> Jason.decode!
 
 
   test "sample encoding parameter passes" do
@@ -621,7 +621,7 @@ defmodule ExaggerateResponsesUnitTest do
       }
     }
   }
-  """ |> Poison.decode!
+  """ |> Jason.decode!
 
 
   test "sample responses parameter passes" do
@@ -669,7 +669,7 @@ defmodule ExaggerateResponseUnitTest do
       }
     }
   }
-  """ |> Poison.decode!
+  """ |> Jason.decode!
 
 
   test "sample response parameter passes" do
