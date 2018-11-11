@@ -1,7 +1,5 @@
 defmodule Exaggerate.Codesynth do
 
-  @project_root Path.relative_to_cwd("../../") |> Path.expand
-
   def swaggerfile_exists?(""), do: false
   def swaggerfile_exists?(filename), do: @project_root |> Path.join(filename) |> File.exists?
   def swaggerfile_isvalidate(filename) do
@@ -42,9 +40,9 @@ defmodule Exaggerate.Codesynth do
     modulename = (if String.match?(swaggerfile, ~r/.json$/), do: String.slice(swaggerfile, 0..-6), else: swaggerfile)
       |> String.capitalize
 
-    moduledir = Path.join([@project_root, "lib", String.downcase(modulename)])
+    moduledir = Path.join([System.cwd, "lib", String.downcase(modulename)])
 
-    swaggerfile_content = @project_root
+    swaggerfile_content = System.cwd
       |> Path.join(swaggerfile)
       |> File.read!
       |> Jason.decode!

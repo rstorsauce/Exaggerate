@@ -1,7 +1,5 @@
 defmodule Exaggerate.Validation do
 
-  @project_root Exaggerate.get_project_root()
-
   require Logger
 
   @doc """
@@ -65,7 +63,7 @@ defmodule Exaggerate.Validation do
 
     Application.ensure_all_started(:yaml_elixir)
 
-    @project_root
+    System.cwd
       |> Path.join(swaggerfile)
       |> File.read!
       |> Jason.decode!
