@@ -60,16 +60,13 @@ defmodule Exaggerate.Validation do
   end
 
   def validate!(swaggerfile) do
-
-    Application.ensure_all_started(:yaml_elixir)
-
     System.cwd
-      |> Path.join(swaggerfile)
-      |> File.read!
-      |> Jason.decode!
-      |> Exaggerate.Validation.OpenAPI.validate
-      |> fn :ok -> :ok
-            {:error, mod, desc} -> Logger.error("#{desc} in module #{inspect mod}")
-         end.()
+    |> Path.join(swaggerfile)
+    |> File.read!
+    |> Jason.decode!
+    |> Exaggerate.Validation.OpenAPI.validate
+    |> fn :ok -> :ok
+          {:error, mod, desc} -> Logger.error("#{desc} in module #{inspect mod}")
+       end.()
   end
 end

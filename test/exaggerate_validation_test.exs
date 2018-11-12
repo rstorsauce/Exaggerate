@@ -2,7 +2,6 @@ defmodule ExaggerateValidationComponentTest do
   use ExUnit.Case, async: true
   import Exaggerate.Validation.Helpers
 
-
   defmodule OneReqParam do
     validate_keys [:param],[]
     string_parameter :param
@@ -88,7 +87,6 @@ defmodule ExaggerateValidationComponentTest do
 
 end
 
-
 defmodule ExaggerateBasicValidationTest do
   use ExUnit.Case, async: true
   doctest Mix.Tasks.Swagger
@@ -108,6 +106,9 @@ defmodule ExaggerateBasicValidationTest do
   end
   test "verifying swaggerfile fails on nonsense string" do
     refute Exaggerate.Codesynth.swaggerfile_exists?("naothuenoth")
+  end
+  test "verifying swaggerfile succeeds on normal string" do
+    assert Exaggerate.Codesynth.swaggerfile_exists?("basic.json")
   end
 end
 

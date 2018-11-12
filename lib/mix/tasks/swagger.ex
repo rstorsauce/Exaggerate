@@ -3,13 +3,10 @@ defmodule Mix.Tasks.Swagger do
 
   @shortdoc "generates an api from the supplied swaggerfile(s)"
   def run(swaggerfile) do
-
-    System.cwd |> IO.inspect(label: "cwd")
-    IO.inspect(swaggerfile, label: "swaggerfile")
-
-    swaggerfile |> Enum.map(fn f -> {f, Exaggerate.Validation.validate!(f)} end)
-                |> Enum.map(fn {f, :ok} -> :ok
-                               {f, {:error, mod, desc}} -> raise("error in file #{f}; #{inspect mod}: desc") end)
+    swaggerfile
+    |> Enum.map(fn f -> {f, Exaggerate.Validation.validate!(f)} end)
+    |> Enum.map(fn {f, :ok} -> :ok
+                   {f, {:error, mod, desc}} -> raise("error in file #{f}; #{inspect mod}: desc") end)
 
     swaggerfile |> Enum.map(&Exaggerate.Codesynth.buildswaggerfile/1)
   end

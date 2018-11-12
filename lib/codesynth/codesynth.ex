@@ -1,5 +1,7 @@
 defmodule Exaggerate.Codesynth do
 
+  @project_root System.cwd
+
   def swaggerfile_exists?(""), do: false
   def swaggerfile_exists?(filename), do: @project_root |> Path.join(filename) |> File.exists?
   def swaggerfile_isvalidate(filename) do
@@ -37,10 +39,14 @@ defmodule Exaggerate.Codesynth do
 
   def buildswaggerfile(swaggerfile, update \\ false) do
     #first, find the .json extension
-    modulename = (if String.match?(swaggerfile, ~r/.json$/), do: String.slice(swaggerfile, 0..-6), else: swaggerfile)
-      |> String.capitalize
+    modulename = if String.match?(swaggerfile, ~r/.json$/) do
+      String.slice(swaggerfile, 0..-6)
+    else
+      swaggerfile
+    end
+    |> Macro.camelize
 
-    moduledir = Path.join([System.cwd, "lib", String.downcase(modulename)])
+    moduledir = Path.join([System.cwd, "lib", Macro.underscore(modulename), "web"])
 
     swaggerfile_content = System.cwd
       |> Path.join(swaggerfile)
@@ -49,7 +55,6 @@ defmodule Exaggerate.Codesynth do
 
     route_content = swaggerfile_content
       |> Exaggerate.Codesynth.Routesynth.build_routemodule(swaggerfile, modulename)
-
 
     routerfile = Path.join(moduledir, "router.ex")
 
