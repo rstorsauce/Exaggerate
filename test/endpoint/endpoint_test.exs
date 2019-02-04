@@ -54,7 +54,7 @@ defmodule ExaggerateTest.EndpointTest do
   end
 
   @one_def_module """
-  defmodule ModuleTest.Web.Endpoint do
+  defmodule ModuleTestWeb.Endpoint do
     def testblock1(conn) do
       # autogen function.
       # insert your code here, then delete
@@ -65,7 +65,7 @@ defmodule ExaggerateTest.EndpointTest do
   """
 
   @two_def_module """
-  defmodule ModuleTest.Web.Endpoint do
+  defmodule ModuleTestWeb.Endpoint do
     def testblock1(conn) do
       # autogen function.
       # insert your code here, then delete
@@ -112,13 +112,36 @@ defmodule ExaggerateTest.EndpointTest do
     end
 
     test "can count implemented endpoints from file" do
-      onedef_file = random_file
+      onedef_file = random_file()
       File.write!(onedef_file, @one_def_module)
       assert [:testblock1] == Endpoint.list_file(onedef_file)
 
-      twodef_file = random_file
+      twodef_file = random_file()
       File.write!(twodef_file, @two_def_module)
       assert [:testblock1, :testblock2] == Endpoint.list_file(twodef_file)
+    end
+  end
+
+  describe "updating files" do
+    test "update an existing file" do
+      onedef_file = random_file()
+      File.write!(onedef_file, @one_def_module)
+      update_map = %{
+        testblock1: [],
+        testblock2: [:param]
+      }
+      Endpoint.update(onedef_file, update_map)
+      assert @two_def_module == File.read!(onedef_file)
+    end
+
+    test "update an existing file with no changes changes nothing" do
+      twodef_file = random_file()
+      File.write!(twodef_file, @two_def_module)
+      update_map = %{
+        testblock2: [:param]
+      }
+      Endpoint.update(twodef_file, update_map)
+      assert @two_def_module == File.read!(twodef_file)
     end
   end
 

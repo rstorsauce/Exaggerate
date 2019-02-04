@@ -1,5 +1,7 @@
 defmodule Exaggerate.Endpoint do
 
+  alias Exaggerate.AST
+
   @type defmod_ast  :: {:defmodule, any, any}
   @type def_ast     :: {:def, any, any}
   @type endpointmap :: %{required(atom) => list(atom)}
@@ -14,14 +16,13 @@ defmodule Exaggerate.Endpoint do
   called by `mix swagger` but not `mix swagger update`, which will parse out
   the existing functions first.
   """
-
   @spec module(String.t, endpointmap) :: defmod_ast
   def module(module_name, endpoints) do
     code = Enum.map(endpoints, &block/1)
 
-    module = module_name
+    module = (module_name <> "_web")
     |> Macro.camelize
-    |> Module.concat(Web.Endpoint)
+    |> Module.concat(Endpoint)
 
     quote do
       defmodule unquote(module) do
@@ -70,12 +71,50 @@ defmodule Exaggerate.Endpoint do
   def list([]), do: []
   def list([_ | rest]), do: list(rest)
 
+  @doc """
+  pulls an existing file which contains an endpoint module and retrieves a
+  list of implemented endpoints.
+  """
   @spec list_file(Path.t) :: [atom]
   def list_file(filepath) do
     filepath
     |> Path.expand
     |> File.read!
     |> list
+  end
+
+  defp insert_routes(content, new_routes) do
+    lines = String.split(content, "\n")
+
+    last_end_idx = lines
+    |> Enum.with_index
+    |> Enum.filter(fn {str, _} -> String.contains?(str, "end") end)
+    |> Enum.map(fn {_, idx} -> idx end)
+    |> Enum.max
+
+    lines
+    |> Enum.slice(0..(last_end_idx - 1))
+    |> Enum.concat(new_routes)
+    |> Enum.concat(["end\n"])
+    |> Enum.join("\n")
+    |> Code.format_string!
+  end
+
+  @spec update(Path.t, map) :: :ok | {:error, any}
+  def update(filepath, routespec) do
+    existing_routes = list_file(filepath)
+
+    new_routes = routespec
+    |> Enum.reject(fn {k, _} -> k in existing_routes end)
+    |> Enum.map(&block/1)
+    |> Enum.map(&AST.to_string/1)
+
+    updated_content = filepath
+    |> File.read!
+    |> insert_routes(new_routes)
+    |> Enum.concat(["\n"])
+
+    File.write!(filepath, updated_content)
   end
 
 end
