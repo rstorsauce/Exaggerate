@@ -23,7 +23,10 @@ defmodule Exaggerate.AST do
     " " <> parts["title"] <>
     parts["rest"] <> "\n" <> Enum.join(rest, "\n")
   end
-  # trap @comment bits as actual comments.
+  # trap @comment bits as actual comments.  Empty comments get no space.
+  def ast_to_string({:@, _, [{:comment, _, [""]}]}, _) do
+    "#"
+  end
   def ast_to_string({:@, _, [{:comment, _, comment}]}, _) do
     "# #{comment}"
   end
