@@ -1,5 +1,5 @@
 %{
-  "exonerate": {:git, "https://github.com/rstorsauce/exonerate.git", "fa7708703c5ee4e58e9e1bcada2721c0dd0fb2d0", []},
+  "exonerate": {:git, "https://github.com/rstorlabs/exonerate.git", "aaa72f4f4c664856fc4a58395140e40173f1f651", [branch: "use_macros"]},
   "jason": {:hex, :jason, "1.1.2", "b03dedea67a99223a2eaf9f1264ce37154564de899fd3d8b9a21b1a6fd64afe7", [:mix], [{:decimal, "~> 1.0", [hex: :decimal, repo: "hexpm", optional: true]}], "hexpm"},
   "mime": {:hex, :mime, "1.3.0", "5e8d45a39e95c650900d03f897fbf99ae04f60ab1daa4a34c7a20a5151b7a5fe", [:mix], [], "hexpm"},
   "plug": {:hex, :plug, "1.7.1", "8516d565fb84a6a8b2ca722e74e2cd25ca0fc9d64f364ec9dbec09d33eb78ccd", [:mix], [{:mime, "~> 1.0", [hex: :mime, repo: "hexpm", optional: false]}, {:plug_crypto, "~> 1.0", [hex: :plug_crypto, repo: "hexpm", optional: false]}], "hexpm"},

@@ -18,7 +18,7 @@ defmodule Exaggerate.Mixfile do
 
   defp deps do
     [
-      {:exonerate, git: "https://github.com/rstorsauce/exonerate.git"},
+      {:exonerate, git: "https://github.com/rstorlabs/exonerate.git", branch: "use_macros"},
       {:jason, "~> 1.1"},
       {:plug, "~> 1.7"},
     ]
