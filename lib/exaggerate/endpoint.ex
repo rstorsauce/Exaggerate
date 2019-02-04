@@ -54,4 +54,28 @@ defmodule Exaggerate.Endpoint do
     end
   end
 
+  @doc """
+  analyzes an existing module document and retrieves a list of implemented
+  endpoints.
+  """
+  @spec list(String.t | iodata) :: [atom]
+  def list(modulecode) when is_binary(modulecode) do
+    modulecode
+    |> Code.format_string!
+    |> list
+  end
+  def list(["def", " ", endpoint | rest]) do
+    [String.to_atom(endpoint) | list(rest)]
+  end
+  def list([]), do: []
+  def list([_ | rest]), do: list(rest)
+
+  @spec list_file(Path.t) :: [atom]
+  def list_file(filepath) do
+    filepath
+    |> Path.expand
+    |> File.read!
+    |> list
+  end
+
 end
