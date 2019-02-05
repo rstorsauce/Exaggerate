@@ -1,8 +1,6 @@
 defmodule ExaggerateTest.AstTest do
   use ExUnit.Case
 
-  @tag :one
-
   alias Exaggerate.AST
 
   describe "constructing with blocks" do
@@ -63,6 +61,7 @@ defmodule ExaggerateTest.AstTest do
       else
         {:error, abc} ->
           Logger.error(abc)
+
         {:error, :hi} ->
           Logger.error("hi")
       end

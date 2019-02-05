@@ -13,8 +13,8 @@ defmodule ExaggerateTest.RequestBodyTest do
       router_res = """
       post "/test" do
         # post a thing
-        with {:ok, content_type} <- Exaggerate.Process.requestbody_content(conn, ["application/json"]),
-             {:ok, content} <- Validation.post_test(conn.body_params, content_type),
+        with {:ok, content_type} <- Process.requestbody_content(conn, ["application/json"]),
+             :ok <- Validation.do_a_thing_content(conn.body_params, content_type),
              {:ok, response} <- do_a_thing(conn, content) do
           send_formatted(conn, 200, response)
         else
@@ -44,11 +44,11 @@ defmodule ExaggerateTest.RequestBodyTest do
       post "/test" do
         # post a thing
         with {:ok, content_type} <-
-               Exaggerate.Process.requestbody_content(conn, [
+               Process.requestbody_content(conn, [
                  "application/json",
                  "application/x-www-form-urlencoded"
                ]),
-             {:ok, content} <- Validation.post_test(conn.body_params, content_type),
+             :ok <- Validation.do_another_thing_content(conn.body_params, content_type),
              {:ok, response} <- do_another_thing(conn, content) do
           send_formatted(conn, 200, response)
         else

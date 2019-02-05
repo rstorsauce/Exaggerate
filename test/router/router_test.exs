@@ -12,7 +12,12 @@ defmodule ExaggerateTest.RouterTest do
     test "simplest router" do
       blockcode_res = """
       get "/test" do
-        test_endpoint(conn)
+        with {:ok, response} <- test_endpoint(conn) do
+          send_formatted(conn, 200, response)
+        else
+          {:error, ecode, response} ->
+            send_formatted(conn, ecode, response)
+        end
       end
       """
 
@@ -25,7 +30,12 @@ defmodule ExaggerateTest.RouterTest do
       blockcode_res = """
       get "/test" do
         # tests an endpoint
-        test_endpoint(conn)
+        with {:ok, response} <- test_endpoint(conn) do
+          send_formatted(conn, 200, response)
+        else
+          {:error, ecode, response} ->
+            send_formatted(conn, ecode, response)
+        end
       end
       """
 

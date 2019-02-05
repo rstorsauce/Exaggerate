@@ -7,6 +7,9 @@ defmodule Exaggerate.AST do
   @type comment :: {:@, context, {:comment, context, [String.t]}}
   @type block   :: {:__block__, context, [ast]}
 
+  @type rightarrow :: {:->, context, [[ast], ...]}
+  @type leftarrow  :: {:<-, context, [[ast], ...]}
+
   @spec to_string(ast) :: String.t
   def to_string(ast) do
     ast
@@ -48,16 +51,42 @@ defmodule Exaggerate.AST do
 
   @doc """
     generate a with clause from a set of ast pairs.
+    a trivial with clause gives case
   """
-  def generate_with(clause_list, coda, else_list \\ nil) do
+  def generate_with(clause_list, coda, else_list \\ [])
+  def generate_with([], coda, _else_list), do: coda
+  def generate_with(clause_list, coda, else_list) do
     {:with, [],
       clause_list ++
       [[do: coda] ++
-      if else_list do
-        [else: Enum.flat_map(else_list, &(&1))]
-      else
+      if else_list == [] do
         []
+      else
+        [else: Enum.flat_map(else_list, &(&1))]
       end]
     }
+  end
+
+  @spec generate_call(atom, [String.t])::ast
+  def generate_call(fn_name, parameters) do
+    {
+      String.to_atom(fn_name),
+      [],
+      parameters
+      |> Enum.map(&Macro.underscore/1)
+      |> Enum.map(&String.to_atom/1)
+      |> Enum.map(fn p -> {p, [], Elixir} end)
+    }
+  end
+
+  @spec var_ast(String.t) :: {atom, [], Elixir}
+  def var_ast(var) do
+    { String.to_atom(var), [], Elixir }
+  end
+
+  @spec swagger_to_sinatra(String.t)::String.t
+  def swagger_to_sinatra(v) do
+    Regex.replace(~r/\{([a-zA-Z0-9]+)\}/, v,
+      fn _, x -> ":" <> Macro.underscore(x) end)
   end
 end
