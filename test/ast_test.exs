@@ -70,4 +70,78 @@ defmodule ExaggerateTest.AstTest do
       |> AST.to_string
     end
   end
+
+  @doc """
+  normalizes an ast.
+  """
+  def n(ast) do
+    ast |> Macro.to_string |> Code.format_string!
+  end
+
+  describe "decommenting operation" do
+    test "simple stuff is untouched" do
+      q = quote do
+        defmodule M do
+          def f(x) do
+            x + 1
+          end
+        end
+      end
+
+      assert n(q) == n(AST.decomment(q))
+    end
+
+    test "module level comments are removed" do
+      q1 = quote do
+        defmodule M do
+          @comment "bad comment"
+          def f(x), do: x + 1
+        end
+      end
+      q2 = quote do
+        defmodule M do
+          def f(x), do: x + 1
+        end
+      end
+
+      assert n(q2) == n(AST.decomment(q1))
+    end
+
+    test "empty comments are removed" do
+      q1 = quote do
+        defmodule M do
+          @comment
+          @comment "bad comment"
+          def f(x), do: x + 1
+        end
+      end
+      q2 = quote do
+        defmodule M do
+          def f(x), do: x + 1
+        end
+      end
+
+      assert n(q2) == n(AST.decomment(q1))
+    end
+
+    test "function-level comments are removed" do
+      q1 = quote do
+        defmodule M do
+          def f(x) do
+            @comment "bad comment"
+            x + 1
+          end
+        end
+      end
+      q2 = quote do
+        defmodule M do
+          def f(x) do
+            x + 1
+          end
+        end
+      end
+
+      assert n(q2) == n(AST.decomment(q1))
+    end
+  end
 end

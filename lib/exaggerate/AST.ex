@@ -88,4 +88,25 @@ defmodule Exaggerate.AST do
     Regex.replace(~r/\{([a-zA-Z0-9]+)\}/, v,
       fn _, x -> ":" <> Macro.underscore(x) end)
   end
+
+  @spec decomment(Macro.t) :: Macro.t
+  @doc """
+  a tool for stripping @comments from elixir ASTs.
+  """
+  def decomment({any, context, content}) do
+    {any, context, decomment(content)}
+  end
+  def decomment({any, content}) do
+    {any, decomment(content)}
+  end
+  def decomment(content) when is_list(content) do
+    content
+    |> Enum.reject(&comment?/1)
+    |> Enum.map(&decomment/1)
+  end
+  def decomment(any), do: any
+
+  @spec comment?(Macro.t)::boolean
+  defp comment?({:@, _, [{:comment, _, _}]}), do: true
+  defp comment?(val), do: false
 end
