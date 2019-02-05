@@ -12,10 +12,12 @@ defmodule Exaggerate.Router do
     elses:  [AST.rightarrow]
   }
 
+  @type spec_data :: float | integer | String.t
+                   | [spec_data] | %{optional(String.t) => spec_data}
   @typedoc """
     maps containing swagger spec information.
   """
-  @type spec_map :: %{optional(String.t) => String.t}
+  @type spec_map :: %{optional(String.t) => spec_data}
 
   @spec module(String.t, Path.t, spec_map) :: AST.ast
   def module(module_name, _filename, _swaggertree) do
@@ -54,13 +56,12 @@ defmodule Exaggerate.Router do
   @type http_verb :: :get | :post | :put | :patch |
                      :delete | :head | :options | :trace
 
-  @spec route({String.t, http_verb}, any()) :: AST.ast
+  @spec route({String.t, http_verb}, spec_map) :: AST.ast
   def route({path!, verb}, spec = %{"operationId" => op}) do
     do_block = %__MODULE__{}
     |> build_params(spec)
     |> validations(spec)
     |> finalize(spec)
-    |> build_operation(spec)
     |> assemble(spec)
 
     path! = AST.swagger_to_sinatra(path!)
@@ -155,19 +156,24 @@ defmodule Exaggerate.Router do
   end
   defp validations(parser, _), do: parser
 
-  defp finalize(parser, _spec) do
-    parser
+  @spec finalize(t, spec_map) :: t
+  defp finalize(parser, spec = %{"operationId" => id}) do
+    call = AST.generate_call(id, parser.vars)
+    spec
+    |> success_code
+    |> case do
+      :multi ->
+        push_guard(parser, quote do
+          {:ok, code, response} <- unquote(call)
+        end)
+      _ ->
+        push_guard(parser, quote do
+          {:ok, response} <- unquote(call)
+        end)
+    end
     |> push_else(quote do
       {:error, ecode, response} ->
         send_formatted(conn, ecode, response)
-    end)
-  end
-
-  @spec build_operation(t, spec_map) :: t
-  defp build_operation(parser, %{"operationId" => id}) do
-    call = AST.generate_call(id, parser.vars)
-    push_guard(parser, quote do
-      {:ok, response} <- unquote(call)
     end)
   end
 
@@ -188,9 +194,17 @@ defmodule Exaggerate.Router do
 
   @spec assemble(t, spec_map) :: AST.ast
   defp assemble(parser, spec) do
+
+    code = spec
+    |> success_code
+    |> case do
+      :multi -> {:code, [], Elixir}
+      any -> any
+    end
+
     with_ast = AST.generate_with(
       parser.guards,
-      quote do send_formatted(conn, 200, response) end,
+      quote do send_formatted(conn, unquote(code), response) end,
       parser.elses
     )
 
@@ -203,5 +217,27 @@ defmodule Exaggerate.Router do
       with_ast
     end
   end
+
+  @spec success_code(spec_map) :: :multi | integer
+  def success_code(%{"responses" => rmap}) do
+    cond do
+      Map.has_key?(rmap, "1XX") -> :multi
+      Map.has_key?(rmap, "2XX") -> :multi
+      true ->
+        list = rmap
+        |> Map.keys
+        |> Enum.map(&String.to_integer/1)
+        |> Enum.filter(&(&1 < 300))
+        successes = Enum.count(list)
+
+        cond do
+          successes == 0 -> 200
+          successes == 1 -> Enum.at(list, 0)
+          true -> :multi
+        end
+    end
+  end
+  # http code 200 is a default response code.
+  def success_code(_spec), do: 200
 
 end

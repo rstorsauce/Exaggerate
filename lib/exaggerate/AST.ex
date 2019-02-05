@@ -1,14 +1,14 @@
 defmodule Exaggerate.AST do
 
   @type context :: [any]
-  @type ast     :: {atom, context, [any]}
+  @type ast     :: {atom, context, [any]} | {atom, any} | atom
   @type defmod  :: {:defmodule, context, [any]}
   @type def     :: {:def, context, [any]}
   @type comment :: {:@, context, {:comment, context, [String.t]}}
   @type block   :: {:__block__, context, [ast]}
 
-  @type rightarrow :: {:->, context, [[ast], ...]}
-  @type leftarrow  :: {:<-, context, [[ast], ...]}
+  @type rightarrow :: {:->, context, [ast, ...]}
+  @type leftarrow  :: {:<-, context, [ast, ...]}
 
   @spec to_string(ast) :: String.t
   def to_string(ast) do
