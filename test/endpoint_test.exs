@@ -1,8 +1,6 @@
 defmodule ExaggerateTest.EndpointTest do
   use ExUnit.Case
 
-  @moduletag :one
-
   alias Exaggerate.Endpoint
   alias Exaggerate.AST
 

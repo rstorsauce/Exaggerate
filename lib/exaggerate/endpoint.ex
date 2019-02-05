@@ -2,8 +2,6 @@ defmodule Exaggerate.Endpoint do
 
   alias Exaggerate.AST
 
-  @type defmod_ast  :: {:defmodule, any, any}
-  @type def_ast     :: {:def, any, any}
   @type endpointmap :: %{required(atom) => list(atom)}
 
   @doc """
@@ -16,7 +14,7 @@ defmodule Exaggerate.Endpoint do
   called by `mix swagger` but not `mix swagger update`, which will parse out
   the existing functions first.
   """
-  @spec module(String.t, endpointmap) :: defmod_ast
+  @spec module(String.t, endpointmap) :: AST.block
   def module(module_name, endpoints) do
     code = Enum.map(endpoints, &block/1)
 
@@ -43,9 +41,9 @@ defmodule Exaggerate.Endpoint do
   This block is intended to be filled out by the user.  @comment values
   are going to be swapped out, later in AST processing, for # comments.
   """
-  @spec block({atom, [atom]}) :: def_ast
+  @spec block({atom, [atom]}) :: AST.def
   def block({ep, v}), do: block(ep, v)
-  @spec block(atom, [atom]) :: def_ast
+  @spec block(atom, [atom]) :: AST.def
   def block(endpoint, vars) do
     raise_str = "error: #{endpoint} not implemented"
     mvars = Enum.map(vars, fn var -> {var, [], Elixir} end)
@@ -121,5 +119,4 @@ defmodule Exaggerate.Endpoint do
 
     File.write!(filepath, updated_content)
   end
-
 end
