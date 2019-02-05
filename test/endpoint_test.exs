@@ -113,18 +113,18 @@ defmodule ExaggerateTest.EndpointTest do
 
   describe "features to do update" do
     test "can count implemented endpoints" do
-      assert [:testblock1] == Endpoint.list(@one_def_module)
-      assert [:testblock1, :testblock2] == Endpoint.list(@two_def_module)
+      assert [:testblock1] == Endpoint.list_endpoints(@one_def_module)
+      assert [:testblock1, :testblock2] == Endpoint.list_endpoints(@two_def_module)
     end
 
     test "can count implemented endpoints from file" do
       onedef_file = random_file()
       File.write!(onedef_file, @one_def_module)
-      assert [:testblock1] == Endpoint.list_file(onedef_file)
+      assert [:testblock1] == Endpoint.list_file_endpoints(onedef_file)
 
       twodef_file = random_file()
       File.write!(twodef_file, @two_def_module)
-      assert [:testblock1, :testblock2] == Endpoint.list_file(twodef_file)
+      assert [:testblock1, :testblock2] == Endpoint.list_file_endpoints(twodef_file)
     end
   end
 
