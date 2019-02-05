@@ -62,28 +62,30 @@ defmodule Exaggerate.Endpoint do
   analyzes an existing module document and retrieves a list of implemented
   endpoints.
   """
-  @spec list(String.t | iodata) :: [atom]
-  def list(modulecode) when is_binary(modulecode) do
+  @spec list_endpoints(binary) :: [atom]
+  def list_endpoints(modulecode) when is_binary(modulecode) do
     modulecode
     |> Code.format_string!
-    |> list
+    |> list_endpoints_io
   end
-  def list(["def", " ", endpoint | rest]) do
-    [String.to_atom(endpoint) | list(rest)]
+
+  @spec list_endpoints_io(iodata) :: [atom]
+  def list_endpoints_io(["def", " ", endpoint | rest]) do
+    [String.to_atom(endpoint) | list_endpoints_io(rest)]
   end
-  def list([]), do: []
-  def list([_ | rest]), do: list(rest)
+  def list_endpoints_io([]), do: []
+  def list_endpoints_io([_ | rest]), do: list_endpoints_io(rest)
 
   @doc """
   pulls an existing file which contains an endpoint module and retrieves a
   list of implemented endpoints.
   """
-  @spec list_file(Path.t) :: [atom]
-  def list_file(filepath) do
+  @spec list_file_endpoints(Path.t) :: [atom]
+  def list_file_endpoints(filepath) do
     filepath
     |> Path.expand
     |> File.read!
-    |> list
+    |> list_endpoints
   end
 
   defp insert_routes(content, new_routes) do
@@ -105,7 +107,7 @@ defmodule Exaggerate.Endpoint do
 
   @spec update(Path.t, map) :: :ok | {:error, any}
   def update(filepath, routespec) do
-    existing_routes = list_file(filepath)
+    existing_routes = list_file_endpoints(filepath)
 
     new_routes = routespec
     |> Enum.reject(fn {k, _} -> k in existing_routes end)

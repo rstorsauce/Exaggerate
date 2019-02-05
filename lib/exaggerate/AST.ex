@@ -1,16 +1,15 @@
 defmodule Exaggerate.AST do
 
   @type context :: [any]
-  @type ast     :: {atom, context, [any]} | {atom, any} | atom
   @type defmod  :: {:defmodule, context, [any]}
   @type def     :: {:def, context, [any]}
   @type comment :: {:@, context, {:comment, context, [String.t]}}
-  @type block   :: {:__block__, context, [ast]}
+  @type block   :: {:__block__, context, [Macro.t]}
 
-  @type rightarrow :: {:->, context, [ast, ...]}
-  @type leftarrow  :: {:<-, context, [ast, ...]}
+  @type rightarrow :: [{:->, context, [Macro.t, ...]}]
+  @type leftarrow  :: {:<-, context, [Macro.t, ...]}
 
-  @spec to_string(ast) :: String.t
+  @spec to_string(Macro.t) :: String.t
   def to_string(ast) do
     ast
     |> Macro.to_string(&ast_to_string/2)
@@ -26,7 +25,7 @@ defmodule Exaggerate.AST do
   @noparen_dot [:body_params]
   # ast conversions
   # remove parentheses from :def, etc.
-  @spec ast_to_string(ast, String.t)::String.t
+  @spec ast_to_string(Macro.t, String.t)::String.t
   def ast_to_string({atom, _, _}, str) when atom in @noparen do
     [head | rest] = String.split(str, "\n")
     parts = Regex.named_captures(~r/\((?<title>.*)\)(?<rest>.*)/, head)
@@ -67,7 +66,7 @@ defmodule Exaggerate.AST do
     }
   end
 
-  @spec generate_call(atom, [String.t])::ast
+  @spec generate_call(String.t, [String.t])::Macro.t
   def generate_call(fn_name, parameters) do
     {
       String.to_atom(fn_name),

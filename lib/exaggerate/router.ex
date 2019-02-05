@@ -19,7 +19,7 @@ defmodule Exaggerate.Router do
   """
   @type spec_map :: %{optional(String.t) => spec_data}
 
-  @spec module(String.t, Path.t, spec_map) :: AST.ast
+  @spec module(String.t, Path.t, spec_map) :: Macro.t
   def module(module_name, _filename, _swaggertree) do
 
     module = (module_name <> "_web")
@@ -56,7 +56,7 @@ defmodule Exaggerate.Router do
   @type http_verb :: :get | :post | :put | :patch |
                      :delete | :head | :options | :trace
 
-  @spec route({String.t, http_verb}, spec_map) :: AST.ast
+  @spec route({String.t, http_verb}, spec_map) :: Macro.t
   def route({path!, verb}, spec = %{"operationId" => op}) do
     do_block = %__MODULE__{}
     |> build_params(spec)
@@ -192,7 +192,7 @@ defmodule Exaggerate.Router do
     %__MODULE__{parser | elses: parser.elses ++ [ast]}
   end
 
-  @spec assemble(t, spec_map) :: AST.ast
+  @spec assemble(t, spec_map) :: Macro.t
   defp assemble(parser, spec) do
 
     code = spec
