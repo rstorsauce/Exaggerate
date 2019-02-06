@@ -24,10 +24,11 @@ defmodule Exaggerate do
     endpoint = Module.concat(rootpath ++ [Macro.camelize(modulename <> "_web"), Endpoint])
     validator = Module.concat(rootpath ++ [Macro.camelize(modulename <> "_web"), Validator])
 
-    quote do
+    q = quote do
       defmodule unquote(router) do
         use Plug.Router
 
+        alias Exaggerate.Tools
         @endpoint unquote(endpoint)
         @validator unquote(validator)
 
@@ -35,12 +36,12 @@ defmodule Exaggerate do
         plug :dispatch
 
         unquote_splicing(routes)
-
-        def hello do
-          IO.inspect(__MODULE__, label: "module")
-        end
       end
     end
+
+    q |> Macro.to_string |> IO.puts
+
+    q
   end
 
   defp unpack_route({route, route_spec}) do
