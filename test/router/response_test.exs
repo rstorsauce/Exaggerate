@@ -12,7 +12,7 @@ defmodule ExaggerateTest.ResponseTest do
     test "simplest router" do
       blockcode_res = """
       put "/test" do
-        with {:ok, response} <- Endpoint.test_endpoint(var!(conn)) do
+        with {:ok, response} <- @endpoint.test_endpoint(var!(conn)) do
           send_formatted(var!(conn), 201, response)
         else
           {:error, ecode, response} ->
@@ -31,7 +31,7 @@ defmodule ExaggerateTest.ResponseTest do
     test "multiple responses" do
       blockcode_res = """
       put "/test" do
-        with {:ok, code, response} <- Endpoint.test_endpoint(var!(conn)) do
+        with {:ok, code, response} <- @endpoint.test_endpoint(var!(conn)) do
           send_formatted(var!(conn), code, response)
         else
           {:error, ecode, response} ->
@@ -51,7 +51,7 @@ defmodule ExaggerateTest.ResponseTest do
     test "range responses" do
       blockcode_res = """
       put "/test" do
-        with {:ok, code, response} <- Endpoint.test_endpoint(var!(conn)) do
+        with {:ok, code, response} <- @endpoint.test_endpoint(var!(conn)) do
           send_formatted(var!(conn), code, response)
         else
           {:error, ecode, response} ->

@@ -2,7 +2,7 @@ defmodule Mix.Tasks.Swagger do
   use Mix.Task
 
   @shortdoc "generates an api from the supplied swaggerfile(s)"
-  def run(params) do
+  def run(_params) do
   #  [swaggerfile | _options] = params
 #
   #  unless File.exists?(swaggerfile) do

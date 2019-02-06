@@ -20,21 +20,25 @@ defmodule Exaggerate do
 
     rootpath = __CALLER__.module |> Module.split
 
-    router = Module.concat(rootpath ++ [Macro.camelize(modulename <> "web"), Router])
-    endpoint = Module.concat(rootpath ++ [Macro.camelize(modulename <> "web"), Endpoint])
-    validator = Module.concat(rootpath ++ [Macro.camelize(modulename <> "web"), Validator])
+    router = Module.concat(rootpath ++ [Macro.camelize(modulename <> "_web"), :Router])
+    endpoint = Module.concat(rootpath ++ [Macro.camelize(modulename <> "_web"), Endpoint])
+    validator = Module.concat(rootpath ++ [Macro.camelize(modulename <> "_web"), Validator])
 
-    q = quote do
+    quote do
       defmodule unquote(router) do
         use Plug.Router
 
-        alias unquote(endpoint)
-        alias unquote(validator)
+        @endpoint unquote(endpoint)
+        @validator unquote(validator)
 
         plug :match
         plug :dispatch
 
         unquote_splicing(routes)
+
+        def hello do
+          IO.inspect(__MODULE__, label: "module")
+        end
       end
     end
   end
@@ -47,7 +51,7 @@ defmodule Exaggerate do
   end
 
   def send_formatted(conn, code, response) do
-    IO.puts("http send #{code}, with #{response}")
+    Plug.Conn.send_resp(conn, code, response)
   end
 
 end

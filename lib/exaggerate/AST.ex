@@ -66,12 +66,14 @@ defmodule Exaggerate.AST do
     }
   end
 
+  @endpoint {:@, [context: Elixir, import: Kernel],
+               [{:endpoint, [context: Elixir], Elixir}]}
   @conn {:var!, [context: Elixir, import: Kernel], [{:conn, [], Elixir}]}
 
-  @spec generate_call(atom, String.t, [String.t])::Macro.t
-  def generate_call(module, method, parameters) do
+  @spec generate_call(String.t, [String.t])::Macro.t
+  def generate_call(method, parameters) do
     {
-      {:., [], [module, String.to_atom(method)]},
+      {:., [], [@endpoint, String.to_atom(method)]},
       [],
       [@conn] ++
       (parameters

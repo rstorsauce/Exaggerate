@@ -20,7 +20,9 @@ defmodule Exaggerate.Mixfile do
   defp deps do
     [
       {:dialyxir, "~> 1.0.0-rc.4", only: :dev, runtime: false},
+      {:plug_cowboy, "~> 1.0"},
       {:exonerate, git: "https://github.com/rstorlabs/exonerate.git", branch: "use_macros"},
+      {:httpoison, "~> 1.4", only: :test},
       {:jason, "~> 1.1"},
       {:plug, "~> 1.7"},
     ]

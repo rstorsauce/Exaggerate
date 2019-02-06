@@ -57,7 +57,7 @@ defmodule Exaggerate.Router do
                      :delete | :head | :options | :trace
 
   @spec route({String.t, http_verb}, spec_map) :: Macro.t
-  def route({path!, verb}, spec = %{"operationId" => op}) do
+  def route({path!, verb}, spec) do
     do_block = %__MODULE__{}
     |> build_params(spec)
     |> validations(spec)
@@ -158,7 +158,7 @@ defmodule Exaggerate.Router do
 
   @spec finalize(t, spec_map) :: t
   defp finalize(parser, spec = %{"operationId" => id}) do
-    call = AST.generate_call(Endpoint, id, parser.vars)
+    call = AST.generate_call(id, parser.vars)
     spec
     |> success_code
     |> case do
