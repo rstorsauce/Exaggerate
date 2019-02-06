@@ -34,6 +34,10 @@ defmodule Exaggerate.AST do
     " " <> parts["title"] <>
     parts["rest"] <> "\n" <> Enum.join(rest, "\n")
   end
+  # trap var! macros as stripping their contents.
+  def ast_to_string({:var!, _, [{varname, _, _}]}, _) do
+    "#{varname}"
+  end
   # trap @comment bits as actual comments.  Empty comments get no space.
   def ast_to_string({:@, _, [{:comment, _, [""]}]}, _) do
     "#"
@@ -69,8 +73,20 @@ defmodule Exaggerate.AST do
   @endpoint {:@, [context: Elixir, import: Kernel],
                [{:endpoint, [context: Elixir], Elixir}]}
   @conn {:var!, [context: Elixir, import: Kernel], [{:conn, [], Elixir}]}
+  @content {:var!, [context: Elixir, import: Kernel], [{:content, [], Elixir}]}
 
   @spec generate_call(String.t, [String.t])::Macro.t
+  def generate_call(method, ["content" | rest]) do
+    {
+      {:., [], [@endpoint, String.to_atom(method)]},
+      [],
+      [@conn, @content] ++
+      (rest
+      |> Enum.map(&Macro.underscore/1)
+      |> Enum.map(&String.to_atom/1)
+      |> Enum.map(fn p -> {p, [], Elixir} end))
+    }
+  end
   def generate_call(method, parameters) do
     {
       {:., [], [@endpoint, String.to_atom(method)]},

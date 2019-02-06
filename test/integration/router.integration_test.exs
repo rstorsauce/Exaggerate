@@ -11,6 +11,7 @@ defmodule ExaggerateTest.Router.IntegrationTest do
   @pathparam_id_port   Enum.random(2101..2150)
   @queryparam_port     Enum.random(2151..2200)
   @queryintparam_port  Enum.random(2201..2250)
+  @headerparam_port    Enum.random(2251..2300)
 
   def child_def(module, port) do
     router = Module.concat([__MODULE__, module, :Router])
@@ -23,7 +24,8 @@ defmodule ExaggerateTest.Router.IntegrationTest do
       child_def(PathparamUuidWeb, @pathparam_uuid_port),
       child_def(PathparamIdWeb, @pathparam_id_port),
       child_def(QueryparamWeb, @queryparam_port),
-      child_def(QueryintparamWeb, @queryintparam_port)
+      child_def(QueryintparamWeb, @queryintparam_port),
+      child_def(HeaderparamWeb, @headerparam_port)
     ]
 
     opts = [strategy: :one_for_one, name: Cowboy.Supervisor]
@@ -189,4 +191,53 @@ defmodule ExaggerateTest.Router.IntegrationTest do
       assert resp.status_code == 400
     end
   end
+
+  router "headerparam", """
+  {
+    "paths": {
+      "/": {
+        "get": {
+          "operationId": "root",
+          "description": "gets by id",
+          "parameters": [{"in": "header", "name": "X-My-Header", "required": true}]
+        }
+      }
+    }
+  }
+  """
+
+  defmodule HeaderparamWeb.Endpoint do
+    def root(_conn, xmyheader) do
+      {:ok, "received #{xmyheader}"}
+    end
+  end
+
+  describe "headers can have params " do
+    test "simple case" do
+      resp = HTTPoison.get!("http://localhost:#{@headerparam_port}/",
+        [{"X-My-Header", "foo"}])
+      assert resp.status_code == 200
+      assert resp.body == "received foo"
+    end
+    test "missing case" do
+      resp = HTTPoison.get!("http://localhost:#{@headerparam_port}/",
+        [{"X-Your-Header", "foo"}])
+      assert resp.status_code == 400
+    end
+  end
+
+  router "bodyparam", """
+  {
+    "paths": {
+      "/": {
+        "get": {
+          "operationId": "root",
+          "description": "gets by id",
+          "requestBody": {"content":
+            {"application/json": {"schema": true}}}
+        }
+      }
+    }
+  }
+  """
 end

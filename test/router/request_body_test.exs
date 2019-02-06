@@ -13,13 +13,13 @@ defmodule ExaggerateTest.RequestBodyTest do
       router_res = """
       post "/test" do
         # post a thing
-        with {:ok, content_type} <- Process.requestbody_content(var!(conn), ["application/json"]),
-             :ok <- Validation.do_a_thing_content(var!(conn).body_params, content_type),
-             {:ok, response} <- @endpoint.do_a_thing(var!(conn), content) do
-          send_formatted(var!(conn), 200, response)
+        with {:ok, content_type} <- Tools.match_mimetype(conn, ["application/json"]),
+             {:ok, content} <- Tools.get_body(conn),
+             {:ok, response} <- @endpoint.do_a_thing(conn, content) do
+          send_formatted(conn, 200, response)
         else
           {:error, ecode, response} ->
-            send_formatted(var!(conn), ecode, response)
+            send_formatted(conn, ecode, response)
         end
       end
       """
@@ -44,16 +44,13 @@ defmodule ExaggerateTest.RequestBodyTest do
       post "/test" do
         # post a thing
         with {:ok, content_type} <-
-               Process.requestbody_content(var!(conn), [
-                 "application/json",
-                 "application/x-www-form-urlencoded"
-               ]),
-             :ok <- Validation.do_another_thing_content(var!(conn).body_params, content_type),
-             {:ok, response} <- @endpoint.do_another_thing(var!(conn), content) do
-          send_formatted(var!(conn), 200, response)
+               Tools.match_mimetype(conn, ["application/json", "application/x-www-form-urlencoded"]),
+             {:ok, content} <- Tools.get_body(conn),
+             {:ok, response} <- @endpoint.do_another_thing(conn, content) do
+          send_formatted(conn, 200, response)
         else
           {:error, ecode, response} ->
-            send_formatted(var!(conn), ecode, response)
+            send_formatted(conn, ecode, response)
         end
       end
       """

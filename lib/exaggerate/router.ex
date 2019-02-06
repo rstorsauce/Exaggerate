@@ -77,15 +77,19 @@ defmodule Exaggerate.Router do
   end
 
   @spec build_params(t, spec_map)::t
-  defp build_params(parser, %{"requestBody" => rq_map}) do
+  defp build_params(parser, spec = %{"requestBody" => rq_map}) do
     if rq_map["content"] do
       mimetype_list = Map.keys(rq_map["content"])
 
       parser
       |> push_var("content")
       |> push_guard(quote do
-        {:ok, content_type} <- Process.requestbody_content(var!(conn), unquote(mimetype_list))
+        {:ok, content_type} <- Tools.match_mimetype(var!(conn), unquote(mimetype_list))
       end)
+      |> push_guard(quote do
+        {:ok, var!(content)} <- Tools.get_body(var!(conn))
+      end)
+      |> build_params(Map.delete(spec, "requestBody"))
     else
       parser
     end
@@ -144,16 +148,16 @@ defmodule Exaggerate.Router do
   end
 
   @spec validations(t, spec_map) :: t
-  defp validations(parser, %{"operationId" => id,
-                             "requestBody" => %{"content" => _}}) do
-    validator = [id, "content"]
-    |> Enum.join("_")
-    |> String.to_atom
-
-    %__MODULE__{parser | guards: parser.guards ++ [quote do
-      :ok <- Validation.unquote(validator)(var!(conn).body_params, content_type)
-    end]}
-  end
+  #defp validations(parser, %{"operationId" => id,
+  #                           "requestBody" => %{"content" => _}}) do
+  #  validator = [id, "content"]
+  #  |> Enum.join("_")
+  #  |> String.to_atom
+#
+  #  %__MODULE__{parser | guards: parser.guards ++ [quote do
+  #    :ok <- Validation.unquote(validator)(var!(conn).body_params, content_type)
+  #  end]}
+  #end
   defp validations(parser, _), do: parser
 
   @spec finalize(t, spec_map) :: t
