@@ -66,15 +66,18 @@ defmodule Exaggerate.AST do
     }
   end
 
-  @spec generate_call(String.t, [String.t])::Macro.t
-  def generate_call(fn_name, parameters) do
+  @conn {:var!, [context: Elixir, import: Kernel], [{:conn, [], Elixir}]}
+
+  @spec generate_call(atom, String.t, [String.t])::Macro.t
+  def generate_call(module, method, parameters) do
     {
-      String.to_atom(fn_name),
+      {:., [], [module, String.to_atom(method)]},
       [],
-      parameters
+      [@conn] ++
+      (parameters
       |> Enum.map(&Macro.underscore/1)
       |> Enum.map(&String.to_atom/1)
-      |> Enum.map(fn p -> {p, [], Elixir} end)
+      |> Enum.map(fn p -> {p, [], Elixir} end))
     }
   end
 
@@ -108,5 +111,5 @@ defmodule Exaggerate.AST do
 
   @spec comment?(Macro.t)::boolean
   defp comment?({:@, _, [{:comment, _, _}]}), do: true
-  defp comment?(val), do: false
+  defp comment?(_val), do: false
 end

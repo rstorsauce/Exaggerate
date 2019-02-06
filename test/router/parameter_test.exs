@@ -13,12 +13,12 @@ defmodule ExaggerateTest.ParameterTest do
       path_param_res = """
       get "/users/:user_id" do
         # Get a user by ID
-        with {:ok, user_id} <- Tools.get_path(conn, "user_id"),
-             {:ok, response} <- user_endpoint(conn, user_id) do
-          send_formatted(conn, 200, response)
+        with {:ok, user_id} <- Tools.get_path(var!(conn), "user_id"),
+             {:ok, response} <- Endpoint.user_endpoint(var!(conn), user_id) do
+          send_formatted(var!(conn), 200, response)
         else
           {:error, ecode, response} ->
-            send_formatted(conn, ecode, response)
+            send_formatted(var!(conn), ecode, response)
         end
       end
       """
@@ -40,12 +40,12 @@ defmodule ExaggerateTest.ParameterTest do
       path_param_res = """
       get "/users/:user_id" do
         # Get a user by ID
-        with {:ok, user_id} <- Tools.get_path(conn, "user_id", :integer),
-             {:ok, response} <- user_endpoint(conn, user_id) do
-          send_formatted(conn, 200, response)
+        with {:ok, user_id} <- Tools.get_path(var!(conn), "user_id", :integer),
+             {:ok, response} <- Endpoint.user_endpoint(var!(conn), user_id) do
+          send_formatted(var!(conn), 200, response)
         else
           {:error, ecode, response} ->
-            send_formatted(conn, ecode, response)
+            send_formatted(var!(conn), ecode, response)
         end
       end
       """
@@ -68,13 +68,13 @@ defmodule ExaggerateTest.ParameterTest do
       path_param_res = """
       get "/cars/:car_id/drivers/:driver_id" do
         # Get car and driver ids
-        with {:ok, car_id} <- Tools.get_path(conn, "car_id"),
-             {:ok, driver_id} <- Tools.get_path(conn, "driver_id"),
-             {:ok, response} <- user_endpoint(conn, car_id, driver_id) do
-          send_formatted(conn, 200, response)
+        with {:ok, car_id} <- Tools.get_path(var!(conn), "car_id"),
+             {:ok, driver_id} <- Tools.get_path(var!(conn), "driver_id"),
+             {:ok, response} <- Endpoint.user_endpoint(var!(conn), car_id, driver_id) do
+          send_formatted(var!(conn), 200, response)
         else
           {:error, ecode, response} ->
-            send_formatted(conn, ecode, response)
+            send_formatted(var!(conn), ecode, response)
         end
       end
       """
@@ -103,12 +103,12 @@ defmodule ExaggerateTest.ParameterTest do
       query_param_res = """
       get "/pets/findByStatus" do
         # Get pet status
-        with {:ok, status} <- Tools.get_query(conn, "status"),
-             {:ok, response} <- user_endpoint(conn, status) do
-          send_formatted(conn, 200, response)
+        with {:ok, status} <- Tools.get_query(var!(conn), "status"),
+             {:ok, response} <- Endpoint.user_endpoint(var!(conn), status) do
+          send_formatted(var!(conn), 200, response)
         else
           {:error, ecode, response} ->
-            send_formatted(conn, ecode, response)
+            send_formatted(var!(conn), ecode, response)
         end
       end
       """
@@ -129,13 +129,13 @@ defmodule ExaggerateTest.ParameterTest do
       query_param_res = """
       get "/notes" do
         # Get pet status
-        with {:ok, offset} <- Tools.get_query(conn, "offset", :integer),
-             {:ok, limit} <- Tools.get_query(conn, "limit", :integer),
-             {:ok, response} <- user_endpoint(conn, offset, limit) do
-          send_formatted(conn, 200, response)
+        with {:ok, offset} <- Tools.get_query(var!(conn), "offset", :integer),
+             {:ok, limit} <- Tools.get_query(var!(conn), "limit", :integer),
+             {:ok, response} <- Endpoint.user_endpoint(var!(conn), offset, limit) do
+          send_formatted(var!(conn), 200, response)
         else
           {:error, ecode, response} ->
-            send_formatted(conn, ecode, response)
+            send_formatted(var!(conn), ecode, response)
         end
       end
       """
@@ -167,12 +167,12 @@ defmodule ExaggerateTest.ParameterTest do
       query_param_res = """
       get "/ping" do
         # Checks if the server is alive
-        with {:ok, x_request_id} <- Tools.get_header(conn, "X-Request-ID", :string),
-             {:ok, response} <- user_endpoint(conn, x_request_id) do
-          send_formatted(conn, 200, response)
+        with {:ok, x_request_id} <- Tools.get_header(var!(conn), "X-Request-ID", :string),
+             {:ok, response} <- Endpoint.user_endpoint(var!(conn), x_request_id) do
+          send_formatted(var!(conn), 200, response)
         else
           {:error, ecode, response} ->
-            send_formatted(conn, ecode, response)
+            send_formatted(var!(conn), ecode, response)
         end
       end
       """
@@ -196,13 +196,13 @@ defmodule ExaggerateTest.ParameterTest do
       query_param_res = """
       get "/ping" do
         # Uses cookie things
-        with {:ok, debug} <- Tools.get_cookie(conn, "debug", :integer),
-             {:ok, csrftoken} <- Tools.get_cookie(conn, "csrftoken", :string),
-             {:ok, response} <- user_endpoint(conn, debug, csrftoken) do
-          send_formatted(conn, 200, response)
+        with {:ok, debug} <- Tools.get_cookie(var!(conn), "debug", :integer),
+             {:ok, csrftoken} <- Tools.get_cookie(var!(conn), "csrftoken", :string),
+             {:ok, response} <- Endpoint.user_endpoint(var!(conn), debug, csrftoken) do
+          send_formatted(var!(conn), 200, response)
         else
           {:error, ecode, response} ->
-            send_formatted(conn, ecode, response)
+            send_formatted(var!(conn), ecode, response)
         end
       end
       """

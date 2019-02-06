@@ -2,7 +2,7 @@ defmodule Exaggerate.Router do
 
   alias Exaggerate.AST
 
-  defstruct vars: ["conn"],
+  defstruct vars: [],
             guards: [],
             elses: []
 
@@ -84,7 +84,7 @@ defmodule Exaggerate.Router do
       parser
       |> push_var("content")
       |> push_guard(quote do
-        {:ok, content_type} <- Process.requestbody_content(conn, unquote(mimetype_list))
+        {:ok, content_type} <- Process.requestbody_content(var!(conn), unquote(mimetype_list))
       end)
     else
       parser
@@ -127,7 +127,7 @@ defmodule Exaggerate.Router do
     |> push_var(var_name)
     |> push_guard(quote do
       {:ok, unquote(name_ast)}
-        <- Tools.unquote(fetch_fn)(conn, unquote(fetch_name), unquote(type_atom))
+        <- Tools.unquote(fetch_fn)(var!(conn), unquote(fetch_name), unquote(type_atom))
     end)
   end
   defp build_param(%{"in" => location,
@@ -139,7 +139,7 @@ defmodule Exaggerate.Router do
     parser
     |> push_var(var_name)
     |> push_guard(quote do
-      {:ok, unquote(name_ast)} <- Tools.unquote(fetch_fn)(conn, unquote(fetch_name))
+      {:ok, unquote(name_ast)} <- Tools.unquote(fetch_fn)(var!(conn), unquote(fetch_name))
     end)
   end
 
@@ -151,14 +151,14 @@ defmodule Exaggerate.Router do
     |> String.to_atom
 
     %__MODULE__{parser | guards: parser.guards ++ [quote do
-      :ok <- Validation.unquote(validator)(conn.body_params, content_type)
+      :ok <- Validation.unquote(validator)(var!(conn).body_params, content_type)
     end]}
   end
   defp validations(parser, _), do: parser
 
   @spec finalize(t, spec_map) :: t
   defp finalize(parser, spec = %{"operationId" => id}) do
-    call = AST.generate_call(id, parser.vars)
+    call = AST.generate_call(Endpoint, id, parser.vars)
     spec
     |> success_code
     |> case do
@@ -173,7 +173,7 @@ defmodule Exaggerate.Router do
     end
     |> push_else(quote do
       {:error, ecode, response} ->
-        send_formatted(conn, ecode, response)
+        send_formatted(var!(conn), ecode, response)
     end)
   end
 
@@ -204,7 +204,7 @@ defmodule Exaggerate.Router do
 
     with_ast = AST.generate_with(
       parser.guards,
-      quote do send_formatted(conn, unquote(code), response) end,
+      quote do send_formatted(var!(conn), unquote(code), response) end,
       parser.elses
     )
 
