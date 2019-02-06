@@ -1,6 +1,7 @@
 defmodule Exaggerate.Router do
 
   alias Exaggerate.AST
+  alias Exaggerate, as: E
 
   defstruct vars: [],
             guards: [],
@@ -12,14 +13,7 @@ defmodule Exaggerate.Router do
     elses:  [AST.rightarrow]
   }
 
-  @type spec_data :: float | integer | String.t
-                   | [spec_data] | %{optional(String.t) => spec_data}
-  @typedoc """
-    maps containing swagger spec information.
-  """
-  @type spec_map :: %{optional(String.t) => spec_data}
-
-  @spec module(String.t, Path.t, spec_map) :: Macro.t
+  @spec module(String.t, Path.t, E.spec_map) :: Macro.t
   def module(module_name, _filename, _swaggertree) do
 
     module = (module_name <> "_web")
@@ -53,10 +47,7 @@ defmodule Exaggerate.Router do
   # OpenAPI 3.0 supports the following verbs for operations:
   # https://swagger.io/docs/specification/paths-and-operations/#operations
 
-  @type http_verb :: :get | :post | :put | :patch |
-                     :delete | :head | :options | :trace
-
-  @spec route({String.t, http_verb}, spec_map) :: Macro.t
+  @spec route(E.route, E.spec_map) :: Macro.t
   def route({path!, verb}, spec) do
     do_block = %__MODULE__{}
     |> build_params(spec)
@@ -76,7 +67,7 @@ defmodule Exaggerate.Router do
     end]
   end
 
-  @spec build_params(t, spec_map)::t
+  @spec build_params(t, E.spec_map)::t
   defp build_params(parser, spec = %{"requestBody" => rq_map}) do
     if rq_map["content"] do
       mimetype_list = Map.keys(rq_map["content"])
@@ -147,20 +138,20 @@ defmodule Exaggerate.Router do
     end)
   end
 
-  @spec validations(t, spec_map) :: t
+  @spec validations(t, E.spec_map) :: t
   #defp validations(parser, %{"operationId" => id,
   #                           "requestBody" => %{"content" => _}}) do
   #  validator = [id, "content"]
   #  |> Enum.join("_")
   #  |> String.to_atom
-#
+  #
   #  %__MODULE__{parser | guards: parser.guards ++ [quote do
   #    :ok <- Validation.unquote(validator)(var!(conn).body_params, content_type)
   #  end]}
   #end
   defp validations(parser, _), do: parser
 
-  @spec finalize(t, spec_map) :: t
+  @spec finalize(t, E.spec_map) :: t
   defp finalize(parser, spec = %{"operationId" => id}) do
     call = AST.generate_call(id, parser.vars)
     spec
@@ -196,7 +187,7 @@ defmodule Exaggerate.Router do
     %__MODULE__{parser | elses: parser.elses ++ [ast]}
   end
 
-  @spec assemble(t, spec_map) :: Macro.t
+  @spec assemble(t, E.spec_map) :: Macro.t
   defp assemble(parser, spec) do
 
     code = spec
@@ -222,7 +213,7 @@ defmodule Exaggerate.Router do
     end
   end
 
-  @spec success_code(spec_map) :: :multi | integer
+  @spec success_code(E.spec_map) :: :multi | integer
   def success_code(%{"responses" => rmap}) do
     cond do
       Map.has_key?(rmap, "1XX") -> :multi

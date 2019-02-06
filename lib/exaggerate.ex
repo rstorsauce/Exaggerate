@@ -9,6 +9,17 @@ defmodule Exaggerate do
   in the case that you want to do something cute.
   """
 
+  @type spec_data :: float | integer | String.t
+  | [spec_data] | %{optional(String.t) => spec_data}
+  @typedoc """
+  maps containing swagger spec information.
+  """
+  @type spec_map :: %{optional(String.t) => spec_data}
+
+  @type http_verb :: :get | :post | :put | :patch |
+                     :delete | :head | :options | :trace
+  @type route :: {String.t, http_verb}
+
   defmacro router(modulename, spec_json) do
     # takes some swagger text and expands it so that the current
     # module is a desired router.
@@ -32,6 +43,11 @@ defmodule Exaggerate do
         @endpoint unquote(endpoint)
         @validator unquote(validator)
 
+        plug Plug.Parsers,
+          parsers: [:urlencoded, :json, :multipart],
+          pass: ["text/*"],
+          json_decoder: Jason
+
         plug :match
         plug :dispatch
 
@@ -39,7 +55,7 @@ defmodule Exaggerate do
       end
     end
 
-    q |> Macro.to_string |> IO.puts
+    q |> Exaggerate.AST.to_string |> IO.puts
 
     q
   end

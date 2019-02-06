@@ -13,26 +13,36 @@ defmodule Exaggerate.AST do
   def to_string(ast) do
     ast
     |> Macro.to_string(&ast_to_string/2)
-    |> Code.format_string!
+    |> Code.format_string!(locals_without_parens: [defschema: 1, plug: :*])
     |> IO.iodata_to_binary
     |> String.replace_suffix("", "\n")
   end
 
   @openapi_verbs [:get, :post, :put, :patch,
                   :delete, :head, :options, :trace]
-  @noparen [:defmodule, :use, :describe, :test, :defschema, :import, :assert, :def,
-            :raise, :with] ++ @openapi_verbs
+  @noparen_simple [:use, :describe, :test,
+                   :defschema, :import, :assert,
+                   :raise, :plug, :alias]
+  @noparen_header [:defmodule, :def, :with] ++ @openapi_verbs
   @noparen_dot [:body_params]
   # ast conversions
   # remove parentheses from :def, etc.
   @spec ast_to_string(Macro.t, String.t)::String.t
-  def ast_to_string({atom, _, _}, str) when atom in @noparen do
+  def ast_to_string({atom, _, _}, str) when atom in @noparen_simple do
+    symbol = Atom.to_string(atom)
+    str
+    |> String.replace_leading(symbol <> "(", symbol <> " ")
+    |> String.trim_trailing
+    |> String.replace_suffix(")", "\n")
+  end
+  def ast_to_string({atom, _, _}, str) when atom in @noparen_header do
     [head | rest] = String.split(str, "\n")
-    parts = Regex.named_captures(~r/\((?<title>.*)\)(?<rest>.*)/, head)
-
-    Atom.to_string(atom) <>
-    " " <> parts["title"] <>
-    parts["rest"] <> "\n" <> Enum.join(rest, "\n")
+    symbol = Atom.to_string(atom)
+    new_head = head
+    |> String.replace_leading(symbol <> "(", symbol <> " ")
+    |> String.trim_trailing
+    |> String.replace_suffix(") do", " do")
+    Enum.join([new_head | rest], "\n")
   end
   # trap var! macros as stripping their contents.
   def ast_to_string({:var!, _, [{varname, _, _}]}, _) do
@@ -44,6 +54,15 @@ defmodule Exaggerate.AST do
   end
   def ast_to_string({:@, _, [{:comment, _, comment}]}, _) do
     "# #{comment}"
+  end
+  # trap sigil_s using the parenthesis mode do
+  def ast_to_string({:sigil_s, _, [{:<<>>, _, [string]} | _]}, _) do
+    trimmed = String.trim(string)
+    if String.contains?(trimmed, "\n") do
+      "\"\"\"\n#{trimmed}\n\"\"\""
+    else
+      "\"#{trimmed}\""
+    end
   end
   def ast_to_string({{:., _, [_, param]}, _, _}, str)
     when param in @noparen_dot do

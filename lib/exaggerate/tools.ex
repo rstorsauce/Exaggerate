@@ -63,11 +63,9 @@ defmodule Exaggerate.Tools do
     {:ok, "application/json"}
   end
 
-  @spec get_body(Plug.Conn.t, String.t) :: {:ok, any}
-  def get_body(conn, index) do
-    conn.body_params
-    |> Map.get(index)
-    |> handle_result(index)
+  @spec get_body(Plug.Conn.t) :: {:ok, any}
+  def get_body(conn) do
+    handle_result(conn.body_params, "content")
   end
 
   ###############################################################

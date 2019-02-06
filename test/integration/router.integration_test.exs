@@ -12,6 +12,7 @@ defmodule ExaggerateTest.Router.IntegrationTest do
   @queryparam_port     Enum.random(2151..2200)
   @queryintparam_port  Enum.random(2201..2250)
   @headerparam_port    Enum.random(2251..2300)
+  @bodyparam_port      Enum.random(2301..2350)
 
   def child_def(module, port) do
     router = Module.concat([__MODULE__, module, :Router])
@@ -25,7 +26,8 @@ defmodule ExaggerateTest.Router.IntegrationTest do
       child_def(PathparamIdWeb, @pathparam_id_port),
       child_def(QueryparamWeb, @queryparam_port),
       child_def(QueryintparamWeb, @queryintparam_port),
-      child_def(HeaderparamWeb, @headerparam_port)
+      child_def(HeaderparamWeb, @headerparam_port),
+      child_def(BodyparamWeb, @bodyparam_port)
     ]
 
     opts = [strategy: :one_for_one, name: Cowboy.Supervisor]
@@ -230,7 +232,7 @@ defmodule ExaggerateTest.Router.IntegrationTest do
   {
     "paths": {
       "/": {
-        "get": {
+        "post": {
           "operationId": "root",
           "description": "gets by id",
           "requestBody": {"content":
@@ -240,4 +242,21 @@ defmodule ExaggerateTest.Router.IntegrationTest do
     }
   }
   """
+
+  describe "body params can be matched " do
+    test "in the simplest case" do
+      resp = HTTPoison.post!("http://localhost:#{@bodyparam_port}/",
+        "{\"foo\":\"bar\"}", [{"Content-Type", "application/json"}])
+      assert resp.status_code == 200
+      assert resp.body == "received {\"foo\":\"bar\"}"
+    end
+  end
+
+  defmodule BodyparamWeb.Endpoint do
+    def root(_conn, content) do
+      {:ok, "received " <> Jason.encode!(content)}
+    end
+  end
+
+  #TODO: test cookie parameters.
 end
