@@ -8,15 +8,22 @@ defmodule ExaggerateTest.Router.IntegrationTest do
 
   @basic_port          Enum.random(2000..2050)
   @pathparam_uuid_port Enum.random(2051..2100)
+  @pathparam_id_port   Enum.random(2101..2150)
+  @queryparam_port     Enum.random(2151..2200)
+  @queryintparam_port  Enum.random(2201..2250)
+
+  def child_def(module, port) do
+    router = Module.concat([__MODULE__, module, :Router])
+    Cowboy.child_spec(scheme: :http, plug: router, options: [port: port])
+  end
 
   setup_all do
     children = [
-      Cowboy.child_spec(scheme: :http,
-                        plug: __MODULE__.BasicWeb.Router,
-                        options: [port: @basic_port]),
-      Cowboy.child_spec(scheme: :http,
-                        plug: __MODULE__.PathparamUuidWeb.Router,
-                        options: [port: @pathparam_uuid_port])
+      child_def(BasicWeb, @basic_port),
+      child_def(PathparamUuidWeb, @pathparam_uuid_port),
+      child_def(PathparamIdWeb, @pathparam_id_port),
+      child_def(QueryparamWeb, @queryparam_port),
+      child_def(QueryintparamWeb, @queryintparam_port)
     ]
 
     opts = [strategy: :one_for_one, name: Cowboy.Supervisor]
@@ -58,7 +65,7 @@ defmodule ExaggerateTest.Router.IntegrationTest do
       "/uuid/{uuid}": {
         "get": {
           "operationId": "uuid",
-          "description": "gets root directory",
+          "description": "gets by uuid",
           "parameters": [{"in": "path", "name": "uuid", "required": true}]
         }
       }
@@ -78,11 +85,108 @@ defmodule ExaggerateTest.Router.IntegrationTest do
                |> List.to_string)
 
   describe "pinging the uuid module" do
-    test "can get a response from root" do
+    test "can get a correct response" do
       resp = HTTPoison.get!("http://localhost:#{@pathparam_uuid_port}/uuid/#{@random_uuid}")
       assert resp.status_code == 200
       assert resp.body == "received #{@random_uuid}"
     end
   end
 
+  router "pathparam_id", """
+  {
+    "paths": {
+      "/id/{id}": {
+        "get": {
+          "operationId": "id",
+          "description": "gets by id",
+          "parameters": [{"in": "path", "name": "id", "required": true,
+                          "schema": {"type": "integer"}}]
+        }
+      }
+    }
+  }
+  """
+
+  defmodule PathparamIdWeb.Endpoint do
+    def id(_conn, id) when is_integer(id) do
+      {:ok, "received #{id}"}
+    end
+  end
+
+  @random_number Enum.random(0..1000)
+
+  describe "sending numerical id in path" do
+    test "can do this in path" do
+      resp = HTTPoison.get!("http://localhost:#{@pathparam_id_port}/id/#{@random_number}")
+      assert resp.status_code == 200
+      assert resp.body == "received #{@random_number}"
+    end
+
+    test "sending a non-number 400s" do
+      resp = HTTPoison.get!("http://localhost:#{@pathparam_id_port}/id/#{@random_uuid}")
+      assert resp.status_code == 400
+    end
+  end
+
+  router "queryparam", """
+  {
+    "paths": {
+      "/": {
+        "get": {
+          "operationId": "root",
+          "description": "gets by id",
+          "parameters": [{"in": "query", "name": "id", "required": true}]
+        }
+      }
+    }
+  }
+  """
+
+  defmodule QueryparamWeb.Endpoint do
+    def root(_conn, id) do
+      {:ok, "received #{id}"}
+    end
+  end
+
+  describe "a query with a string parameter" do
+    test "can do this in query param" do
+      resp = HTTPoison.get!("http://localhost:#{@queryparam_port}/?id=foo")
+      assert resp.status_code == 200
+      assert resp.body == "received foo"
+    end
+  end
+
+  router "queryintparam", """
+  {
+    "paths": {
+      "/": {
+        "get": {
+          "operationId": "root",
+          "description": "gets by id",
+          "parameters": [{"in": "query", "name": "id", "required": true,
+                          "schema": {"type": "integer"}}]
+        }
+      }
+    }
+  }
+  """
+
+  defmodule QueryintparamWeb.Endpoint do
+    def root(_conn, id) when is_integer(id) do
+      {:ok, "received #{id}"}
+    end
+  end
+
+  describe "a query with an integer parameter" do
+    test "can do this in query param" do
+      resp = HTTPoison.get!("http://localhost:#{@queryintparam_port}/?id=123")
+      assert resp.status_code == 200
+      assert resp.body == "received 123"
+    end
+
+    test "non-integer 400's" do
+      resp = HTTPoison.get!("http://localhost:#{@queryintparam_port}/?id=foo")
+      assert resp.status_code == 400
+    end
+  end
 end
