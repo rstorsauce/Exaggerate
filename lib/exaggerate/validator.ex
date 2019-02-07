@@ -12,9 +12,7 @@ defmodule Exaggerate.Validator do
     |> build_body(id, spec)
     |> build_param(id, spec)
 
-    quote do
-      unquote_splicing(parsed.methods)
-    end
+    splice_blocks(parsed.methods)
   end
 
   @spec build_body(t, String.t, E.spec_map) :: t
@@ -22,8 +20,8 @@ defmodule Exaggerate.Validator do
     parserlist = cmap
     |> Enum.with_index
     |> Enum.map(fn
-      {{_mime_type, %{"schema" => smap}}, idx} ->
-        generate_defschema(id <> "_body_" <> inspect(idx), smap)
+      {{mimetype, %{"schema" => smap}}, idx} ->
+        generate_defschema(id <> "_body_" <> inspect(idx), smap, mimetype)
       _ -> nil
     end)
     |> Enum.filter(&(&1))
@@ -46,6 +44,23 @@ defmodule Exaggerate.Validator do
   end
   def build_param(parser, _, _), do: parser
 
+  @spec generate_defschema(String.t, E.spec_map, String.t) :: Macro.t
+  def generate_defschema(label, spec, mimetype) do
+    label_atom = String.to_atom(label)
+    spec_str = spec
+    |> Jason.encode!(pretty: true)
+    |> ensigil
+
+    bodyparam = {:defbodyparam, [], [[{label_atom, mimetype}]]}
+    schema = {:defschema, [], [[{label_atom, spec_str}]]}
+
+    quote do
+      unquote(bodyparam)
+      unquote(schema)
+    end
+  end
+
+  @spec generate_defschema(String.t, E.spec_map) :: Macro.t
   def generate_defschema(label, spec) do
     label_atom = String.to_atom(label)
     spec_str = spec
@@ -55,9 +70,21 @@ defmodule Exaggerate.Validator do
     {:defschema, [], [[{label_atom, spec_str}]]}
   end
 
+  @spec ensigil(String.t) :: Macro.t
   defp ensigil(string) do
     {:sigil_s,
       [context: Elixir, import: Kernel],
       [{:<<>>, [], [string]}, []]}
   end
+
+  @spec splice_blocks([Macro.t]) :: Macro.t
+  defp splice_blocks(blocklist) do
+    {:__block__, [],
+      Enum.flat_map(blocklist, fn
+        {:__block__, [], list} -> list
+        any -> [any]
+      end)
+    }
+  end
+
 end

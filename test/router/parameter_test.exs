@@ -162,7 +162,6 @@ defmodule ExaggerateTest.ParameterTest do
   end
 
   describe "header parameters" do
-    @tag :one
     test "simple parameter with schema" do
       query_param_res = """
       get "/ping" do
@@ -198,6 +197,7 @@ defmodule ExaggerateTest.ParameterTest do
         # Uses cookie things
         with {:ok, debug} <- Tools.get_cookie(conn, "debug", :integer),
              {:ok, csrftoken} <- Tools.get_cookie(conn, "csrftoken", :string),
+             :ok <- @validator.user_endpoint_parameters_0(debug, true),
              {:ok, response} <- @endpoint.user_endpoint(conn, debug, csrftoken) do
           send_formatted(conn, 200, response)
         else

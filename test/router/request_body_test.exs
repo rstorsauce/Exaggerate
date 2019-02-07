@@ -15,6 +15,7 @@ defmodule ExaggerateTest.RequestBodyTest do
         # post a thing
         with {:ok, content_type} <- Tools.match_mimetype(conn, ["application/json"]),
              {:ok, content} <- Tools.get_body(conn),
+             :ok <- @validator.do_a_thing_content_0(content, content_type, "application/json"),
              {:ok, response} <- @endpoint.do_a_thing(conn, content) do
           send_formatted(conn, 200, response)
         else
@@ -46,6 +47,13 @@ defmodule ExaggerateTest.RequestBodyTest do
         with {:ok, content_type} <-
                Tools.match_mimetype(conn, ["application/json", "application/x-www-form-urlencoded"]),
              {:ok, content} <- Tools.get_body(conn),
+             :ok <- @validator.do_another_thing_content_0(content, content_type, "application/json"),
+             :ok <-
+               @validator.do_another_thing_content_1(
+                 content,
+                 content_type,
+                 "application/x-www-form-urlencoded"
+               ),
              {:ok, response} <- @endpoint.do_another_thing(conn, content) do
           send_formatted(conn, 200, response)
         else

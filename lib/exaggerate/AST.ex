@@ -13,7 +13,7 @@ defmodule Exaggerate.AST do
   def to_string(ast) do
     ast
     |> Macro.to_string(&ast_to_string/2)
-    |> Code.format_string!(locals_without_parens: [defschema: 1, plug: :*])
+    |> Code.format_string!(locals_without_parens: [defschema: 1, plug: :*, defbodyparam: 1])
     |> IO.iodata_to_binary
     |> String.replace_suffix("", "\n")
   end
@@ -21,7 +21,7 @@ defmodule Exaggerate.AST do
   @openapi_verbs [:get, :post, :put, :patch,
                   :delete, :head, :options, :trace]
   @noparen_simple [:use, :describe, :test,
-                   :defschema, :import, :assert,
+                   :defschema, :defbodyparam, :import, :assert,
                    :raise, :plug, :alias]
   @noparen_header [:defmodule, :def, :with] ++ @openapi_verbs
   @noparen_dot [:body_params]

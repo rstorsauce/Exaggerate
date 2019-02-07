@@ -20,6 +20,8 @@ defmodule Exaggerate do
                      :delete | :head | :options | :trace
   @type route :: {String.t, http_verb}
 
+  @type error :: {:error, integer, String.t}
+
   defmacro router(modulename, spec_json) do
     # takes some swagger text and expands it so that the current
     # module is a desired router.
@@ -55,6 +57,7 @@ defmodule Exaggerate do
       end
     end
 
+    IO.puts("==================")
     q |> Exaggerate.AST.to_string |> IO.puts
 
     q
@@ -69,6 +72,18 @@ defmodule Exaggerate do
 
   def send_formatted(conn, code, response) do
     Plug.Conn.send_resp(conn, code, response)
+  end
+
+  defmacro defbodyparam([{label, mimetype}]) do
+    quote do
+      @spec unquote(label)(Exonerate.json, String.t, String.t) :: :ok | Exaggerate.error
+      def unquote(label)(content, unquote(mimetype), unquote(mimetype)) do
+        unquote(label)(content)
+      end
+      def unquote(label)(_, _, _) do
+        :ok
+      end
+    end
   end
 
 end

@@ -50,8 +50,10 @@ defmodule Exaggerate.Router do
   @spec route(E.route, E.spec_map) :: Macro.t
   def route({path!, verb}, spec) do
     do_block = %__MODULE__{}
+    |> build_body(spec)
     |> build_params(spec)
-    |> validations(spec)
+    |> validate_body(spec)
+    |> validate_params(spec)
     |> finalize(spec)
     |> assemble(spec)
 
@@ -67,8 +69,8 @@ defmodule Exaggerate.Router do
     end]
   end
 
-  @spec build_params(t, E.spec_map)::t
-  defp build_params(parser, spec = %{"requestBody" => rq_map}) do
+  @spec build_body(t, E.spec_map) :: t
+  defp build_body(parser, spec = %{"requestBody" => rq_map}) do
     if rq_map["content"] do
       mimetype_list = Map.keys(rq_map["content"])
 
@@ -85,6 +87,9 @@ defmodule Exaggerate.Router do
       parser
     end
   end
+  defp build_body(parser, _), do: parser
+
+  @spec build_params(t, E.spec_map) :: t
   defp build_params(parser, %{"parameters" => params}) do
     Enum.reduce(params, parser, &build_param/2)
   end
@@ -138,18 +143,78 @@ defmodule Exaggerate.Router do
     end)
   end
 
-  @spec validations(t, E.spec_map) :: t
-  #defp validations(parser, %{"operationId" => id,
-  #                           "requestBody" => %{"content" => _}}) do
-  #  validator = [id, "content"]
-  #  |> Enum.join("_")
-  #  |> String.to_atom
-  #
-  #  %__MODULE__{parser | guards: parser.guards ++ [quote do
-  #    :ok <- Validation.unquote(validator)(var!(conn).body_params, content_type)
-  #  end]}
-  #end
-  defp validations(parser, _), do: parser
+  defp validator(id, type, idx) do
+    [id, type, inspect idx]
+    |> Enum.join("_")
+    |> String.to_atom
+  end
+
+  @spec validate_body(t, E.spec_map) :: t
+  defp validate_body(parser, %{"operationId" => id,
+                               "requestBody" => %{"content" => cmap}}) do
+    cmap
+    |> Enum.with_index
+    |> Enum.map(fn
+      {{mime_type, %{"schema" => _}}, idx} ->
+        method = validator(id, "content", idx)
+        quote do
+          :ok <- @validator.unquote(method)(var!(content), content_type, unquote(mime_type))
+        end
+      _ -> nil
+    end)
+    |> Enum.filter(&(&1))
+    |> Enum.reduce(parser, &push_guard(&2, &1))
+  end
+  defp validate_body(parser, _), do: parser
+
+  # TODO: move router parameter fetches into their own piece at
+  # the start.
+
+  @spec validate_params(t, E.spec_map) :: t
+  defp validate_params(parser, %{"operationId" => id,
+                               "parameters" => plist}) do
+    plist
+    |> Enum.with_index
+    |> Enum.map(&validate_param(&1, id))
+    |> Enum.filter(&(&1))
+    |> Enum.reduce(parser, &push_guard(&2, &1))
+  end
+  defp validate_params(parser, _), do: parser
+
+  @simple_schema [
+    %{"type" => "integer"},
+    %{"type" => "number"},
+    %{"type" => "string"}
+  ]
+
+  defp validate_param({%{"in" => location,
+                         "name" => name,
+                         "schema" => s}, idx}, id) when
+                         s in @simple_schema, do: nil
+  defp validate_param({%{"in" => location,
+                         "name" => name,
+                         "required" => true,
+                         "schema" => _}, idx}, id) do
+
+    method = validator(id, "parameters", idx)
+    {var_name, _} = names_for(name, location)
+    name_ast = AST.var_ast(var_name)
+
+    quote do
+      :ok <- @validator.unquote(method)(unquote(name_ast), true)
+    end
+  end
+  defp validate_param({%{"in" => location,
+                         "name" => name,
+                         "schema" => _}, idx}, id) do
+    method = validator(id, "parameters", idx)
+    loc_atom = String.to_atom(location)
+
+    quote do
+      :ok <- @validator.unquote(method)(conn, unquote(name), unquote(loc_atom))
+    end
+  end
+  defp validate_param(_, _), do: nil
 
   @spec finalize(t, E.spec_map) :: t
   defp finalize(parser, spec = %{"operationId" => id}) do

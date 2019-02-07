@@ -34,6 +34,5 @@ defmodule ExaggerateTest.Validator.ParameterTest do
   end
 
   # TODO:
-  #   serialization
-  #   reserved characters (allowReserved parameter)
+  #   fill out more tests here.
 end

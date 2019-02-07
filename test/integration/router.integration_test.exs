@@ -258,5 +258,10 @@ defmodule ExaggerateTest.Router.IntegrationTest do
     end
   end
 
+  # make a dummy validator that doesn't actually validate.
+  defmodule BodyparamWeb.Validator do
+    def root_content_0(_, _, _), do: :ok
+  end
+
   #TODO: test cookie parameters.
 end
