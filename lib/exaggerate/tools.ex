@@ -5,22 +5,12 @@ defmodule Exaggerate.Tools do
 
   @spec get_path(Plug.Conn.t, String.t, :string) :: {:ok, String.t}
   @spec get_path(Plug.Conn.t, String.t, :integer) :: {:ok, integer} | error
-  def get_path(conn, index, format \\ :string)
-  def get_path(conn, index, :string) do
-    {:ok, conn.path_params[index]}
-  end
-  def get_path(conn, index, :integer) do
-    val = conn.path_params[index]
-    if val do
-      val
-      |> Integer.parse
-      |> case do
-        {v, ""} -> {:ok, v}
-        _ -> {:error, 400, "malformed path component (#{index}): #{conn.path_params[index]}"}
-      end
-    else
-      {:error, 400, "malformed query component: (#{index}) not provided"}
-    end
+  def get_path(conn, index, format \\ :string) do
+    conn
+    |> Map.get(:path_params)
+    |> Map.get(index)
+    |> check_format(format)
+    |> handle_result(index)
   end
 
   @spec get_query(Plug.Conn.t, String.t, :string) :: {:ok, String.t}

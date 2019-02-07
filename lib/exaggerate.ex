@@ -1,7 +1,5 @@
 defmodule Exaggerate do
 
-  alias Exaggerate.Router
-
   @moduledoc """
   Swagger -> Plug DSL.
 
@@ -22,14 +20,16 @@ defmodule Exaggerate do
 
   @type error :: {:error, integer, String.t}
 
+
   defmacro router(modulename, spec_json) do
     # takes some swagger text and expands it so that the current
     # module is a desired router.
 
     routes = spec_json
+    |> Macro.expand(__CALLER__)
     |> Jason.decode!
     |> Map.get("paths")
-    |> Enum.flat_map(&unpack_route/1)
+    |> Enum.flat_map(&unpack_route(&1, Exaggerate.Router))
 
     rootpath = __CALLER__.module |> Module.split
 
@@ -63,10 +63,39 @@ defmodule Exaggerate do
     q
   end
 
-  defp unpack_route({route, route_spec}) do
+  defmacro validator(modulename, spec_json) do
+    # takes some swagger text and expands it so that the current
+    # module is a desired router.
+
+    validations = spec_json
+    |> Macro.expand(__CALLER__)
+    |> Jason.decode!
+    |> Map.get("paths")
+    |> Enum.flat_map(&unpack_route(&1, Exaggerate.Validator))
+
+    rootpath = __CALLER__.module |> Module.split
+
+    validator = Module.concat(rootpath ++ [Macro.camelize(modulename <> "_web"), Validator])
+
+    q = quote do
+      defmodule unquote(validator) do
+
+        import Exonerate
+        import Exaggerate
+
+        unquote_splicing(validations)
+      end
+    end
+
+    IO.puts("==================")
+    q |> Exaggerate.AST.to_string |> IO.puts
+
+    q
+  end
+
+  defp unpack_route({route, route_spec}, module) do
     Enum.map(route_spec, fn {verb, ep_spec} ->
-      Router.route(
-        {route, String.to_atom(verb)}, ep_spec)
+      module.route({route, String.to_atom(verb)}, ep_spec)
     end)
   end
 
@@ -74,13 +103,33 @@ defmodule Exaggerate do
     Plug.Conn.send_resp(conn, code, response)
   end
 
-  defmacro defbodyparam([{label, mimetype}]) do
+  defmacro defparam(method, true) do
     quote do
-      @spec unquote(label)(Exonerate.json, String.t, String.t) :: :ok | Exaggerate.error
-      def unquote(label)(content, unquote(mimetype), unquote(mimetype)) do
-        unquote(label)(content)
+      @spec unquote(method)(Exonerate.json, true) :: :ok | Exaggerate.error
+      def unquote(method)(content, true) do
+        unquote(method)(content)
       end
-      def unquote(label)(_, _, _) do
+    end
+  end
+  defmacro defparam(method, where, name) do
+    quote do
+      @spec unquote(method)(Exonerate.json, String.t) :: :ok | Exaggerate.error
+      def unquote(method)(conn, name) do
+        conn
+        |> Map.get(where)
+        |> Map.get(name)
+        |> unquote(method)
+      end
+    end
+  end
+
+  defmacro defbodyparam([{method, mimetype}]) do
+    quote do
+      @spec unquote(method)(Exonerate.json, String.t, String.t) :: :ok | Exaggerate.error
+      def unquote(method)(content, unquote(mimetype), unquote(mimetype)) do
+        unquote(method)(content)
+      end
+      def unquote(method)(_, _, _) do
         :ok
       end
     end

@@ -1,6 +1,6 @@
 defmodule ExaggerateTest.Router.IntegrationTest do
 
-  use ExUnit.Case
+  use ExUnit.Case #, async: true
   import Exaggerate
 
   # we're going to stand up a server here.

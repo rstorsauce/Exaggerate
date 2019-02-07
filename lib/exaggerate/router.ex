@@ -187,9 +187,9 @@ defmodule Exaggerate.Router do
     %{"type" => "string"}
   ]
 
-  defp validate_param({%{"in" => location,
-                         "name" => name,
-                         "schema" => s}, idx}, id) when
+  defp validate_param({%{"in" => _,
+                         "name" => _,
+                         "schema" => s}, _}, _) when
                          s in @simple_schema, do: nil
   defp validate_param({%{"in" => location,
                          "name" => name,

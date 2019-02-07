@@ -67,6 +67,7 @@ defmodule Exaggerate.Validator do
     |> Jason.encode!(pretty: true)
     |> ensigil
 
+    {:defparam, [], [[label_atom]]}
     {:defschema, [], [[{label_atom, spec_str}]]}
   end
 
