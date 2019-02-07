@@ -6,13 +6,10 @@ defmodule ExaggerateTest.Router.IntegrationTest do
   # we're going to stand up a server here.
   alias Plug.Adapters.Cowboy
 
-  @basic_port          Enum.random(2000..2050)
-  @pathparam_uuid_port Enum.random(2051..2100)
-  @pathparam_id_port   Enum.random(2101..2150)
-  @queryparam_port     Enum.random(2151..2200)
-  @queryintparam_port  Enum.random(2201..2250)
-  @headerparam_port    Enum.random(2251..2300)
-  @bodyparam_port      Enum.random(2301..2350)
+  @modules [:BasicWeb, :PathparamUuidWeb, :PathparamIdWeb, :QueryparamWeb,
+            :QueryintparamWeb, :HeaderparamWeb, :BodyparamWeb]
+  @ports Enum.take_random(2000..15000, 50)
+  @portmapper Enum.into(Enum.zip(@modules, @ports), %{})
 
   def child_def(module, port) do
     router = Module.concat([__MODULE__, module, :Router])
@@ -20,16 +17,7 @@ defmodule ExaggerateTest.Router.IntegrationTest do
   end
 
   setup_all do
-    children = [
-      child_def(BasicWeb, @basic_port),
-      child_def(PathparamUuidWeb, @pathparam_uuid_port),
-      child_def(PathparamIdWeb, @pathparam_id_port),
-      child_def(QueryparamWeb, @queryparam_port),
-      child_def(QueryintparamWeb, @queryintparam_port),
-      child_def(HeaderparamWeb, @headerparam_port),
-      child_def(BodyparamWeb, @bodyparam_port)
-    ]
-
+    children = for m <- @modules, do: child_def(m, @portmapper[m])
     opts = [strategy: :one_for_one, name: Cowboy.Supervisor]
     Supervisor.start_link(children, opts)
     :ok
@@ -57,7 +45,7 @@ defmodule ExaggerateTest.Router.IntegrationTest do
 
   describe "pinging the basic module" do
     test "can get a response from root" do
-      resp = HTTPoison.get!("http://localhost:#{@basic_port}/")
+      resp = HTTPoison.get!("http://localhost:#{@portmapper[:BasicWeb]}/")
       assert resp.status_code == 200
       assert resp.body == "received"
     end
@@ -90,7 +78,7 @@ defmodule ExaggerateTest.Router.IntegrationTest do
 
   describe "pinging the uuid module" do
     test "can get a correct response" do
-      resp = HTTPoison.get!("http://localhost:#{@pathparam_uuid_port}/uuid/#{@random_uuid}")
+      resp = HTTPoison.get!("http://localhost:#{@portmapper[:PathparamUuidWeb]}/uuid/#{@random_uuid}")
       assert resp.status_code == 200
       assert resp.body == "received #{@random_uuid}"
     end
@@ -121,13 +109,13 @@ defmodule ExaggerateTest.Router.IntegrationTest do
 
   describe "sending numerical id in path" do
     test "can do this in path" do
-      resp = HTTPoison.get!("http://localhost:#{@pathparam_id_port}/id/#{@random_number}")
+      resp = HTTPoison.get!("http://localhost:#{@portmapper[:PathparamIdWeb]}/id/#{@random_number}")
       assert resp.status_code == 200
       assert resp.body == "received #{@random_number}"
     end
 
     test "sending a non-number 400s" do
-      resp = HTTPoison.get!("http://localhost:#{@pathparam_id_port}/id/#{@random_uuid}")
+      resp = HTTPoison.get!("http://localhost:#{@portmapper[:PathparamIdWeb]}/id/#{@random_uuid}")
       assert resp.status_code == 400
     end
   end
@@ -154,7 +142,7 @@ defmodule ExaggerateTest.Router.IntegrationTest do
 
   describe "a query with a string parameter" do
     test "can do this in query param" do
-      resp = HTTPoison.get!("http://localhost:#{@queryparam_port}/?id=foo")
+      resp = HTTPoison.get!("http://localhost:#{@portmapper[:QueryparamWeb]}/?id=foo")
       assert resp.status_code == 200
       assert resp.body == "received foo"
     end
@@ -183,13 +171,13 @@ defmodule ExaggerateTest.Router.IntegrationTest do
 
   describe "a query with an integer parameter" do
     test "can do this in query param" do
-      resp = HTTPoison.get!("http://localhost:#{@queryintparam_port}/?id=123")
+      resp = HTTPoison.get!("http://localhost:#{@portmapper[:QueryintparamWeb]}/?id=123")
       assert resp.status_code == 200
       assert resp.body == "received 123"
     end
 
     test "non-integer 400's" do
-      resp = HTTPoison.get!("http://localhost:#{@queryintparam_port}/?id=foo")
+      resp = HTTPoison.get!("http://localhost:#{@portmapper[:QueryintparamWeb]}/?id=foo")
       assert resp.status_code == 400
     end
   end
@@ -216,13 +204,13 @@ defmodule ExaggerateTest.Router.IntegrationTest do
 
   describe "headers can have params " do
     test "simple case" do
-      resp = HTTPoison.get!("http://localhost:#{@headerparam_port}/",
+      resp = HTTPoison.get!("http://localhost:#{@portmapper[:HeaderparamWeb]}/",
         [{"X-My-Header", "foo"}])
       assert resp.status_code == 200
       assert resp.body == "received foo"
     end
     test "missing case" do
-      resp = HTTPoison.get!("http://localhost:#{@headerparam_port}/",
+      resp = HTTPoison.get!("http://localhost:#{@portmapper[:HeaderparamWeb]}/",
         [{"X-Your-Header", "foo"}])
       assert resp.status_code == 400
     end
@@ -245,7 +233,7 @@ defmodule ExaggerateTest.Router.IntegrationTest do
 
   describe "body params can be matched " do
     test "in the simplest case" do
-      resp = HTTPoison.post!("http://localhost:#{@bodyparam_port}/",
+      resp = HTTPoison.post!("http://localhost:#{@portmapper[:BodyparamWeb]}/",
         "{\"foo\":\"bar\"}", [{"Content-Type", "application/json"}])
       assert resp.status_code == 200
       assert resp.body == "received {\"foo\":\"bar\"}"
