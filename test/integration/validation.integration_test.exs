@@ -60,6 +60,9 @@ defmodule ExaggerateTest.Validation.IntegrationTest do
 
   describe "schema validation in-path for integers" do
     test "positive control" do
+
+      IO.inspect(@portmapper, label: "PM")
+
       resp = HTTPoison.get!("http://localhost:#{@portmapper[:InPathWeb]}/20")
       assert resp.status_code == 200
       assert resp.body == "received 20"

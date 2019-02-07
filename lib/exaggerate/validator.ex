@@ -67,8 +67,12 @@ defmodule Exaggerate.Validator do
     |> Jason.encode!(pretty: true)
     |> ensigil
 
-    {:defparam, [], [[label_atom]]}
-    {:defschema, [], [[{label_atom, spec_str}]]}
+    schema = {:defschema, [], [[{label_atom, spec_str}]]}
+
+    quote do
+      defparam unquote(label_atom)
+      unquote(schema)
+    end
   end
 
   @spec ensigil(String.t) :: Macro.t

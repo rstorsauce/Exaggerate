@@ -103,22 +103,11 @@ defmodule Exaggerate do
     Plug.Conn.send_resp(conn, code, response)
   end
 
-  defmacro defparam(method, true) do
+  defmacro defparam(method) do
     quote do
       @spec unquote(method)(Exonerate.json, true) :: :ok | Exaggerate.error
       def unquote(method)(content, true) do
         unquote(method)(content)
-      end
-    end
-  end
-  defmacro defparam(method, where, name) do
-    quote do
-      @spec unquote(method)(Exonerate.json, String.t) :: :ok | Exaggerate.error
-      def unquote(method)(conn, name) do
-        conn
-        |> Map.get(where)
-        |> Map.get(name)
-        |> unquote(method)
       end
     end
   end

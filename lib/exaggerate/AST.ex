@@ -9,18 +9,20 @@ defmodule Exaggerate.AST do
   @type rightarrow :: [{:->, context, [Macro.t, ...]}]
   @type leftarrow  :: {:<-, context, [Macro.t, ...]}
 
+  @specials [defparam: 1, defschema: 1, plug: :*, defbodyparam: 1]
+
   @spec to_string(Macro.t) :: String.t
   def to_string(ast) do
     ast
     |> Macro.to_string(&ast_to_string/2)
-    |> Code.format_string!(locals_without_parens: [defschema: 1, plug: :*, defbodyparam: 1])
+    |> Code.format_string!(locals_without_parens: @specials)
     |> IO.iodata_to_binary
     |> String.replace_suffix("", "\n")
   end
 
   @openapi_verbs [:get, :post, :put, :patch,
                   :delete, :head, :options, :trace]
-  @noparen_simple [:use, :describe, :test,
+  @noparen_simple [:use, :describe, :test, :defparam,
                    :defschema, :defbodyparam, :import, :assert,
                    :raise, :plug, :alias]
   @noparen_header [:defmodule, :def, :with] ++ @openapi_verbs
