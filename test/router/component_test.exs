@@ -1,4 +1,4 @@
-defmodule ExaggerateTest.RouterComponentTest do
+defmodule ExaggerateTest.Router.ComponentTest do
 
   use ExUnit.Case
 

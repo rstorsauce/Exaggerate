@@ -1,4 +1,4 @@
-defmodule ExaggerateTest.RequestBodyTest do
+defmodule ExaggerateTest.Router.RequestBodyTest do
   use ExUnit.Case
 
   alias Exaggerate.AST

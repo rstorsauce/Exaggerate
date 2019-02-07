@@ -1,4 +1,4 @@
-defmodule ExaggerateTest.RouterTest do
+defmodule ExaggerateTest.Router.RouterTest do
   use ExUnit.Case
 
   alias Exaggerate.Router
