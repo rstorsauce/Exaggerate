@@ -11,7 +11,7 @@ defmodule ExaggerateTest.Validation.Schemata do
               {"in": "path",
                "name": "id",
                "required": true,
-               "schema": {"type": "integer", "minimum":"1"}}
+               "schema": {"type": "integer", "minimum": 1}}
             ]
           }
         }
@@ -44,7 +44,7 @@ defmodule ExaggerateTest.Validation.IntegrationTest do
 
   setup_all do
     children = for m <- @modules, do: child_def(m, @portmapper[m])
-    opts = [strategy: :one_for_one, name: Cowboy.Supervisor]
+    opts = [strategy: :one_for_one, name: Cowboy.Supervisor2]
     Supervisor.start_link(children, opts)
     :ok
   end
@@ -53,16 +53,17 @@ defmodule ExaggerateTest.Validation.IntegrationTest do
   validator "in_path", Schemata.in_path
 
   defmodule InPathWeb.Endpoint do
-    def root(_conn, value) when is_integer(value) do
+    def by_id(_conn, value) when is_integer(value) do
       {:ok, "received #{value}"}
     end
   end
 
   describe "schema validation in-path for integers" do
+    test "validator works as expected" do
+      refute :ok == InPathWeb.Validator.by_id_parameters_0(0)
+      assert :ok == InPathWeb.Validator.by_id_parameters_0(10)
+    end
     test "positive control" do
-
-      IO.inspect(@portmapper, label: "PM")
-
       resp = HTTPoison.get!("http://localhost:#{@portmapper[:InPathWeb]}/20")
       assert resp.status_code == 200
       assert resp.body == "received 20"

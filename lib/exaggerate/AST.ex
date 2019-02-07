@@ -151,4 +151,21 @@ defmodule Exaggerate.AST do
   @spec comment?(Macro.t)::boolean
   defp comment?({:@, _, [{:comment, _, _}]}), do: true
   defp comment?(_val), do: false
+
+  @spec ensigil(String.t) :: Macro.t
+  def ensigil(string) do
+    {:sigil_s,
+      [context: Elixir, import: Kernel],
+      [{:<<>>, [], [string]}, []]}
+  end
+
+  @spec splice_blocks([Macro.t]) :: Macro.t
+  def splice_blocks(blocklist) do
+    {:__block__, [],
+      Enum.flat_map(blocklist, fn
+        {:__block__, [], list} -> list
+        any -> [any]
+      end)
+    }
+  end
 end

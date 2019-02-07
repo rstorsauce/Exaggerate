@@ -83,7 +83,7 @@ defmodule Exaggerate.Validator do
   end
 
   @spec splice_blocks([Macro.t]) :: Macro.t
-  defp splice_blocks(blocklist) do
+  def splice_blocks(blocklist) do
     {:__block__, [],
       Enum.flat_map(blocklist, fn
         {:__block__, [], list} -> list
