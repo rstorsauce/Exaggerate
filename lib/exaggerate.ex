@@ -45,12 +45,13 @@ defmodule Exaggerate do
         @endpoint unquote(endpoint)
         @validator unquote(validator)
 
+        plug :match
+
         plug Plug.Parsers,
           parsers: [:urlencoded, :json, :multipart],
-          pass: ["text/*"],
+          pass: ["*/*"],
           json_decoder: Jason
 
-        plug :match
         plug :dispatch
 
         unquote_splicing(routes)

@@ -49,15 +49,12 @@ defmodule Exaggerate.Tools do
   end
 
   @spec match_mimetype(Plug.Conn.t, [String.t])::{:ok, String.t} | error
-  def match_mimetype(conn, _mimetypes) do
-    IO.inspect(conn, label: "matchmimetype")
+  def match_mimetype(_conn, _mimetypes) do
     {:ok, "application/json"}
   end
 
   @spec get_body(Plug.Conn.t) :: {:ok, any}
   def get_body(conn) do
-    IO.inspect(conn, label: "conn")
-    IO.inspect(conn.body_params, label: "conn/body_params")
     handle_result(conn.body_params, "content")
   end
 

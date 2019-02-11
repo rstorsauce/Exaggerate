@@ -160,7 +160,7 @@ defmodule ExaggerateTest.Validation.IntegrationTest do
 
   defmodule InBodyWeb.Endpoint do
     def body_test(_conn, value) do
-      {:ok, "received #{value}"}
+      {:ok, "received #{inspect value}"}
     end
   end
 
@@ -171,16 +171,29 @@ defmodule ExaggerateTest.Validation.IntegrationTest do
       refute :ok == InBodyWeb.Validator.body_test_content_0([1,2,3,4,5])
     end
 
+    @tag :one
     test "bad content-type fails" do
       resp = HTTPoison.post!("http://localhost:#{@portmapper[:InBodyWeb]}/",
         "[]")
       assert resp.status_code == 400
     end
 
-    @tag :one
     test "too short array fails" do
       resp = HTTPoison.post!("http://localhost:#{@portmapper[:InBodyWeb]}/",
         "[]", [{"Content-Type", "application/json"}])
+      assert resp.status_code == 400
+    end
+
+    test "goldilocks array ok" do
+      resp = HTTPoison.post!("http://localhost:#{@portmapper[:InBodyWeb]}/",
+        "[1, 2, 3]", [{"Content-Type", "application/json"}])
+      assert resp.status_code == 200
+      assert resp.body == "received [1, 2, 3]"
+    end
+
+    test "too long array fails" do
+      resp = HTTPoison.post!("http://localhost:#{@portmapper[:InBodyWeb]}/",
+        "[1, 2, 3, 4, 5]", [{"Content-Type", "application/json"}])
       assert resp.status_code == 400
     end
   end
