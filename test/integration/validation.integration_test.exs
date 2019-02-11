@@ -19,6 +19,55 @@ defmodule ExaggerateTest.Validation.Schemata do
     }
     """
   end
+
+  defmacro in_query do
+    """
+    {
+      "paths": {
+        "/": {
+          "get": {
+            "operationId": "for_foo",
+            "description": "pings back foo string",
+            "parameters": [
+              {"in": "query",
+               "name": "foo",
+               "required": true,
+               "schema": {"type": "string", "minLength": 2, "maxLength": 4}}
+            ]
+          }
+        }
+      }
+    }
+    """
+  end
+
+  defmacro in_body do
+    """
+    {
+      "paths": {
+        "/": {
+          "post": {
+            "operationId": "body_test",
+            "description": "pings back foo string",
+            "requestBody": {
+              "description": "anything in an array, really",
+              "required": true,
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "array",
+                    "minItems": 2,
+                    "maxItems": 3
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    """
+  end
 end
 
 defmodule ExaggerateTest.Validation.IntegrationTest do
@@ -33,7 +82,7 @@ defmodule ExaggerateTest.Validation.IntegrationTest do
   # we're going to stand up a server here.
   alias Plug.Adapters.Cowboy
 
-  @modules [:InPathWeb]
+  @modules [:InPathWeb, :InQueryWeb, :InBodyWeb]
   @ports Enum.take_random(2000..15000, 50)
   @portmapper Enum.into(Enum.zip(@modules, @ports), %{})
 
@@ -76,5 +125,64 @@ defmodule ExaggerateTest.Validation.IntegrationTest do
     end
   end
 
+  router "in_query", Schemata.in_query
+  validator "in_query", Schemata.in_query
+
+  defmodule InQueryWeb.Endpoint do
+    def for_foo(_conn, value) do
+      {:ok, "received #{value}"}
+    end
+  end
+
+  describe "schema validation in-query for strings" do
+    test "validator works as expected" do
+      refute :ok == InQueryWeb.Validator.for_foo_parameters_0("")
+      assert :ok == InQueryWeb.Validator.for_foo_parameters_0("cool")
+      refute :ok == InQueryWeb.Validator.for_foo_parameters_0("way too long")
+    end
+    test "positive control" do
+      resp = HTTPoison.get!("http://localhost:#{@portmapper[:InQueryWeb]}/?foo=cool")
+      assert resp.status_code == 200
+      assert resp.body == "received cool"
+    end
+    test "too short string" do
+      resp = HTTPoison.get!("http://localhost:#{@portmapper[:InQueryWeb]}/?foo=")
+      assert resp.status_code == 400
+    end
+    test "too long string" do
+      resp = HTTPoison.get!("http://localhost:#{@portmapper[:InQueryWeb]}/?foo=bababooey")
+      assert resp.status_code == 400
+    end
+  end
+
+  router "in_body", Schemata.in_body
+  validator "in_body", Schemata.in_body
+
+  defmodule InBodyWeb.Endpoint do
+    def body_test(_conn, value) do
+      {:ok, "received #{value}"}
+    end
+  end
+
+  describe "schema validation in-body for arrays" do
+    test "validator works as expected" do
+      refute :ok == InBodyWeb.Validator.body_test_content_0([])
+      assert :ok == InBodyWeb.Validator.body_test_content_0([1,2,3])
+      refute :ok == InBodyWeb.Validator.body_test_content_0([1,2,3,4,5])
+    end
+
+    test "bad content-type fails" do
+      resp = HTTPoison.post!("http://localhost:#{@portmapper[:InBodyWeb]}/",
+        "[]")
+      assert resp.status_code == 400
+    end
+
+    @tag :one
+    test "too short array fails" do
+      resp = HTTPoison.post!("http://localhost:#{@portmapper[:InBodyWeb]}/",
+        "[]", [{"Content-Type", "application/json"}])
+      assert resp.status_code == 400
+    end
+  end
 
 end

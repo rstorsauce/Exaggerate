@@ -182,16 +182,19 @@ defmodule Exaggerate.Router do
   end
   defp validate_params(parser, _), do: parser
 
-  @simple_schema [
+  @simple_schemata [
     %{"type" => "integer"},
     %{"type" => "number"},
-    %{"type" => "string"}
+    %{"type" => "string"},
+    true,
+    false,
+    %{}
   ]
 
   defp validate_param({%{"in" => _,
                          "name" => _,
                          "schema" => s}, _}, _) when
-                         s in @simple_schema, do: nil
+                         s in @simple_schemata, do: nil
   defp validate_param({%{"in" => location,
                          "name" => name,
                          "required" => true,
@@ -315,8 +318,8 @@ defmodule Exaggerate.Router do
 
   @spec needs_typecheck?(E.spec_map) :: boolean
   def needs_typecheck?(path) do
-    IO.inspect(path, label: "ABCD")
-    params_needs_check?(path["parameters"])
+    params_needs_check?(path["parameters"]) ||
+    body_needs_check?(path["requestBody"])
   end
 
   @spec params_needs_check?(nil | []) :: boolean
@@ -324,8 +327,19 @@ defmodule Exaggerate.Router do
   defp params_needs_check?([]), do: false
   defp params_needs_check?(arr) do
     Enum.any?(arr, fn
-      %{"schema" => schema} when schema not in @simple_schema -> true
+      %{"schema" => schema} when schema not in @simple_schemata -> true
       %{} -> false
     end)
   end
+
+  @spec body_needs_check?(nil | []) :: boolean
+  defp body_needs_check?(nil), do: false
+  defp body_needs_check?(%{"content" => content}) do
+    Enum.any?(content, fn
+      {_, %{"schema" => schema}}  when schema not in @simple_schemata -> true
+      {_, _} -> false
+    end)
+  end
+  defp body_needs_check?(_), do: false
+
 end

@@ -49,12 +49,15 @@ defmodule Exaggerate.Tools do
   end
 
   @spec match_mimetype(Plug.Conn.t, [String.t])::{:ok, String.t} | error
-  def match_mimetype(_conn, _mimetypes) do
+  def match_mimetype(conn, _mimetypes) do
+    IO.inspect(conn, label: "matchmimetype")
     {:ok, "application/json"}
   end
 
   @spec get_body(Plug.Conn.t) :: {:ok, any}
   def get_body(conn) do
+    IO.inspect(conn, label: "conn")
+    IO.inspect(conn.body_params, label: "conn/body_params")
     handle_result(conn.body_params, "content")
   end
 
@@ -74,5 +77,6 @@ defmodule Exaggerate.Tools do
 
   defp handle_result(nil, index), do: {:error, 400, "missing value: #{index}"}
   defp handle_result(e = {:error, _, _}, _), do: e
+  defp handle_result(%{"_json" => v}, _), do: {:ok, v}
   defp handle_result(v, _), do: {:ok, v}
 end

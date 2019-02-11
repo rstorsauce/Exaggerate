@@ -11,9 +11,9 @@ defmodule ExaggerateTest.Validator.RequestBodyTest do
   describe "really trivial requestbody " do
     test "single content route" do
       router_res = """
-      defbodyparam do_a_thing_body_0: "application/json"
+      defbodyparam do_a_thing_content_0: "application/json"
 
-      defschema do_a_thing_body_0: "true"
+      defschema do_a_thing_content_0: "true"
       """
 
       assert router_res == {"/test", :post}
@@ -33,13 +33,13 @@ defmodule ExaggerateTest.Validator.RequestBodyTest do
 
     test "multiple content route" do
       router_res = """
-      defbodyparam do_a_thing_body_0: "application/json"
+      defbodyparam do_a_thing_content_0: "application/json"
 
-      defschema do_a_thing_body_0: "true"
+      defschema do_a_thing_content_0: "true"
 
-      defbodyparam do_a_thing_body_1: "multipart/form-data"
+      defbodyparam do_a_thing_content_1: "multipart/form-data"
 
-      defschema do_a_thing_body_1: \"""
+      defschema do_a_thing_content_1: \"""
                 {
                   "type": "object"
                 }

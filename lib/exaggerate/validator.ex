@@ -21,7 +21,7 @@ defmodule Exaggerate.Validator do
     |> Enum.with_index
     |> Enum.map(fn
       {{mimetype, %{"schema" => smap}}, idx} ->
-        generate_defschema(id <> "_body_" <> inspect(idx), smap, mimetype)
+        generate_defschema(id <> "_content_" <> inspect(idx), smap, mimetype)
       _ -> nil
     end)
     |> Enum.filter(&(&1))
