@@ -63,10 +63,16 @@ defmodule ExaggerateTest.Validation.IntegrationTest do
       refute :ok == InPathWeb.Validator.by_id_parameters_0(0)
       assert :ok == InPathWeb.Validator.by_id_parameters_0(10)
     end
+
     test "positive control" do
       resp = HTTPoison.get!("http://localhost:#{@portmapper[:InPathWeb]}/20")
       assert resp.status_code == 200
       assert resp.body == "received 20"
+    end
+
+    test "bad number results in failure code" do
+      resp = HTTPoison.get!("http://localhost:#{@portmapper[:InPathWeb]}/0")
+      assert resp.status_code == 400
     end
   end
 

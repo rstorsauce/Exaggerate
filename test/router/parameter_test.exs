@@ -201,6 +201,9 @@ defmodule ExaggerateTest.Router.ParameterTest do
              {:ok, response} <- @endpoint.user_endpoint(conn, debug, csrftoken) do
           send_formatted(conn, 200, response)
         else
+          {:mismatch, {loc, val}} ->
+            send_formatted(conn, 400, "invalid parameter value")
+
           {:error, ecode, response} ->
             send_formatted(conn, ecode, response)
         end

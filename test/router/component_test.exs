@@ -59,4 +59,10 @@ defmodule ExaggerateTest.Router.ComponentTest do
     end
   end
 
+  describe "router needs path" do
+    test "no parameters is false" do
+      assert false == Router.needs_typecheck?(%{"operationId" => "foo"})
+      assert false == Router.needs_typecheck?(%{"parameters" => []})
+    end
+  end
 end

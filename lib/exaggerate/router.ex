@@ -54,6 +54,7 @@ defmodule Exaggerate.Router do
     |> build_params(spec)
     |> validate_body(spec)
     |> validate_params(spec)
+    |> add_typecheck(spec)
     |> finalize(spec)
     |> assemble(spec)
 
@@ -300,4 +301,31 @@ defmodule Exaggerate.Router do
   # http code 200 is a default response code.
   def success_code(_spec), do: 200
 
+  @spec add_typecheck(t, E.spec_map) :: t
+  defp add_typecheck(parser, spec) do
+    if needs_typecheck?(spec) do
+      push_else(parser, quote do
+        {:mismatch, {loc, val}} ->
+          send_formatted(var!(conn), 400, "invalid parameter value")
+      end)
+    else
+      parser
+    end
+  end
+
+  @spec needs_typecheck?(E.spec_map) :: boolean
+  def needs_typecheck?(path) do
+    IO.inspect(path, label: "ABCD")
+    params_needs_check?(path["parameters"])
+  end
+
+  @spec params_needs_check?(nil | []) :: boolean
+  defp params_needs_check?(nil), do: false
+  defp params_needs_check?([]), do: false
+  defp params_needs_check?(arr) do
+    Enum.any?(arr, fn
+      %{"schema" => schema} when schema not in @simple_schema -> true
+      %{} -> false
+    end)
+  end
 end
