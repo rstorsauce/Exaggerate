@@ -87,10 +87,10 @@ defmodule Exaggerate do
       end
     end
 
-    #IO.puts("==================")
-    #q |> Exaggerate.AST.to_string |> IO.puts
-#
-    #q
+    IO.puts("==================")
+    q |> Exaggerate.AST.to_string |> IO.puts
+
+    q
   end
 
   defp unpack_route({route, route_spec}, module) do
@@ -105,9 +105,16 @@ defmodule Exaggerate do
 
   defmacro defparam(method) do
     quote do
-      @spec unquote(method)(Exonerate.json, true) :: :ok | Exaggerate.error
+      @spec unquote(method)(Exonerate.json, boolean) :: :ok | Exaggerate.error
       def unquote(method)(content, true) do
         unquote(method)(content)
+      end
+      def unquote(method)(content, false) do
+        if is_nil(content) do
+          :ok
+        else
+          unquote(method)(content)
+        end
       end
     end
   end

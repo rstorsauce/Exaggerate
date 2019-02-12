@@ -144,7 +144,7 @@ defmodule ExaggerateTest.Validation.IntegrationTest do
   # we're going to stand up a server here.
   alias Plug.Adapters.Cowboy
 
-  @modules [:InPathWeb, :InQueryWeb, :InBodyWeb, :InBodyDoubleWeb]
+  @modules [:InPathWeb, :InQueryWeb, :InQueryOptionalWeb, :InBodyWeb, :InBodyDoubleWeb]
   @ports Enum.take_random(2000..15000, 50)
   @portmapper Enum.into(Enum.zip(@modules, @ports), %{})
 
@@ -217,6 +217,37 @@ defmodule ExaggerateTest.Validation.IntegrationTest do
     end
     test "too long string" do
       resp = HTTPoison.get!("http://localhost:#{@portmapper[:InQueryWeb]}/?foo=bababooey")
+      assert resp.status_code == 400
+    end
+  end
+
+  router "in_query_optional", Schemata.in_query_optional
+  validator "in_query_optional", Schemata.in_query_optional
+
+  defmodule InQueryOptionalWeb.Endpoint do
+    def for_foo(conn) do
+      foo_val = conn.query_params["foo"]
+      {:ok, "received #{inspect foo_val}"}
+    end
+  end
+
+  describe "optional schema validation in-query for strings" do
+    test "positive control" do
+      resp = HTTPoison.get!("http://localhost:#{@portmapper[:InQueryOptionalWeb]}/?foo=cool")
+      assert resp.status_code == 200
+      assert resp.body == "received \"cool\""
+    end
+    test "nonexistent" do
+      resp = HTTPoison.get!("http://localhost:#{@portmapper[:InQueryOptionalWeb]}/?bar=baz")
+      assert resp.status_code == 200
+      assert resp.body == "received nil"
+    end
+    test "too short string" do
+      resp = HTTPoison.get!("http://localhost:#{@portmapper[:InQueryOptionalWeb]}/?foo=")
+      assert resp.status_code == 400
+    end
+    test "too long string" do
+      resp = HTTPoison.get!("http://localhost:#{@portmapper[:InQueryOptionalWeb]}/?foo=bababooey")
       assert resp.status_code == 400
     end
   end

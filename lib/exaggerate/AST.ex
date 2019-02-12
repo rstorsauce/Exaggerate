@@ -26,7 +26,7 @@ defmodule Exaggerate.AST do
                    :defschema, :defbodyparam, :import, :assert,
                    :raise, :plug, :alias]
   @noparen_header [:defmodule, :def, :with] ++ @openapi_verbs
-  @noparen_dot [:body_params]
+  @noparen_dot [:body_params, :query_params]
   # ast conversions
   # remove parentheses from :def, etc.
   @spec ast_to_string(Macro.t, String.t)::String.t

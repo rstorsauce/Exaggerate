@@ -99,10 +99,12 @@ defmodule ExaggerateTest.Router.ParameterTest do
   end
 
   describe "query parameters" do
-    test "simple path parameter with schema" do
+    test "simple query parameter with schema" do
       query_param_res = """
       get "/pets/findByStatus" do
         # Get pet status
+        conn = Plug.Conn.fetch_query_params(conn)
+
         with {:ok, status} <- Tools.get_query(conn, "status"),
              {:ok, response} <- @endpoint.user_endpoint(conn, status) do
           send_formatted(conn, 200, response)
@@ -129,6 +131,8 @@ defmodule ExaggerateTest.Router.ParameterTest do
       query_param_res = """
       get "/notes" do
         # Get pet status
+        conn = Plug.Conn.fetch_query_params(conn)
+
         with {:ok, offset} <- Tools.get_query(conn, "offset", :integer),
              {:ok, limit} <- Tools.get_query(conn, "limit", :integer),
              {:ok, response} <- @endpoint.user_endpoint(conn, offset, limit) do
@@ -164,6 +168,8 @@ defmodule ExaggerateTest.Router.ParameterTest do
       query_param_opt_res = """
       get "/pets/findByStatus" do
         # Get pet status
+        conn = Plug.Conn.fetch_query_params(conn)
+
         with {:ok, status} <- Tools.get_query(conn, "status"),
              {:ok, response} <- @endpoint.user_endpoint(conn, status) do
           send_formatted(conn, 200, response)
@@ -194,11 +200,16 @@ defmodule ExaggerateTest.Router.ParameterTest do
       query_param_opt_res = """
       get "/pets/findByStatus" do
         # Get pet status
+        conn = Plug.Conn.fetch_query_params(conn)
+
         with {:ok, status} <- Tools.get_query(conn, "status"),
-             {:ok, response} <- @endpoint.user_endpoint(conn, status),
-             :ok <- @validator.user_endpoint_parameter_1(conn.query_params["param1"], false) do
+             :ok <- @validator.user_endpoint_parameters_1(conn.query_params["param1"], false),
+             {:ok, response} <- @endpoint.user_endpoint(conn, status) do
           send_formatted(conn, 200, response)
         else
+          {:mismatch, {loc, val}} ->
+            send_formatted(conn, 400, "invalid parameter value")
+
           {:error, ecode, response} ->
             send_formatted(conn, ecode, response)
         end
@@ -261,6 +272,8 @@ defmodule ExaggerateTest.Router.ParameterTest do
       query_param_res = """
       get "/ping" do
         # Uses cookie things
+        conn = Plug.Conn.fetch_req_cookies(conn)
+
         with {:ok, debug} <- Tools.get_cookie(conn, "debug", :integer),
              {:ok, csrftoken} <- Tools.get_cookie(conn, "csrftoken", :string),
              :ok <- @validator.user_endpoint_parameters_0(debug, true),

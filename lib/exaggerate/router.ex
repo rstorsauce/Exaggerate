@@ -5,12 +5,14 @@ defmodule Exaggerate.Router do
 
   defstruct vars: [],
             guards: [],
-            elses: []
+            elses: [],
+            fetches: MapSet.new([])
 
   @type t :: %__MODULE__{
-    vars:   [String.t],
-    guards: [AST.leftarrow],
-    elses:  [AST.rightarrow]
+    vars:    [String.t],
+    guards:  [AST.leftarrow],
+    elses:   [AST.rightarrow],
+    fetches: MapSet.t(Macro.t)
   }
 
   @spec module(String.t, Path.t, E.spec_map) :: Macro.t
@@ -103,6 +105,15 @@ defmodule Exaggerate.Router do
   # generates a fetcher symbol that lives in the Exonerate.Tools module.
   defp fetcher(location), do: String.to_atom("get_" <> location)
 
+  @spec prefetch(String.t) :: Macro.t
+  defp prefetch("cookie") do
+    quote do conn = Plug.Conn.fetch_req_cookies(conn) end
+  end
+  defp prefetch("query") do
+    quote do conn = Plug.Conn.fetch_query_params(conn) end
+  end
+  defp prefetch(_), do:  nil
+
   @spec names_for(String.t, String.t) :: {String.t, String.t}
   # canonicalizes names to an elixir reasonable symbols.
   defp names_for(name, "header") do
@@ -121,11 +132,13 @@ defmodule Exaggerate.Router do
                      "name" => name,
                      "schema" => %{"type" => type}}, parser)
                      when type in @jsonschema_types do
+    prefetch_fn = prefetch(location)
     fetch_fn = fetcher(location)
     {var_name, fetch_name} = names_for(name, location)
     name_ast = AST.var_ast(var_name)
     type_atom = String.to_atom(type)
     parser
+    |> push_fetch(prefetch_fn)
     |> push_var(var_name)
     |> push_guard(quote do
       {:ok, unquote(name_ast)}
@@ -135,14 +148,25 @@ defmodule Exaggerate.Router do
   defp build_param(%{"in" => location,
                      "required" => true,
                      "name" => name}, parser) do
+    prefetch_fn = prefetch(location)
     fetch_fn = fetcher(location)
     {var_name, fetch_name} = names_for(name, location)
     name_ast = AST.var_ast(var_name)
     parser
+    |> push_fetch(prefetch_fn)
     |> push_var(var_name)
     |> push_guard(quote do
       {:ok, unquote(name_ast)} <- Tools.unquote(fetch_fn)(var!(conn), unquote(fetch_name))
     end)
+  end
+  defp build_param(%{"in" => location,
+                     "required" => false,
+                     "name" => name,
+                     "schema" => schema}, parser) do
+    parser
+  end
+  defp build_param(_, parser) do
+    parser
   end
 
   defp validator(id, type, idx) do
@@ -209,14 +233,12 @@ defmodule Exaggerate.Router do
       :ok <- @validator.unquote(method)(unquote(name_ast), true)
     end
   end
-  defp validate_param({%{"in" => location,
+  defp validate_param({%{"in" => _location,
                          "name" => name,
                          "schema" => _}, idx}, id) do
     method = validator(id, "parameters", idx)
-    loc_atom = String.to_atom(location)
-
     quote do
-      :ok <- @validator.unquote(method)(conn, unquote(name), unquote(loc_atom))
+      :ok <- @validator.unquote(method)(var!(conn).query_params[unquote(name)], false)
     end
   end
   defp validate_param(_, _), do: nil
@@ -242,6 +264,8 @@ defmodule Exaggerate.Router do
     end)
   end
 
+  # PUSH FUNCTIONS
+
   @spec push_var(t, String.t) :: t
   defp push_var(parser, str) do
     %__MODULE__{parser | vars: parser.vars ++ [str]}
@@ -255,6 +279,12 @@ defmodule Exaggerate.Router do
   @spec push_else(t, AST.rightarrow) :: t
   defp push_else(parser, ast) do
     %__MODULE__{parser | elses: parser.elses ++ [ast]}
+  end
+
+  @spec push_fetch(t, Macro.t | nil) :: t
+  defp push_fetch(parser, nil), do: parser
+  defp push_fetch(parser, ast) do
+    %__MODULE__{parser | fetches: MapSet.put(parser.fetches, ast)}
   end
 
   @spec assemble(t, E.spec_map) :: Macro.t
@@ -276,6 +306,7 @@ defmodule Exaggerate.Router do
     if spec["summary"] do
       quote do
         @comment unquote(spec["summary"])
+        unquote_splicing(Enum.to_list(parser.fetches))
         unquote(with_ast)
       end
     else

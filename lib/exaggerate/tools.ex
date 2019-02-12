@@ -16,9 +16,7 @@ defmodule Exaggerate.Tools do
   @spec get_query(Plug.Conn.t, String.t, :string) :: {:ok, String.t}
   @spec get_query(Plug.Conn.t, String.t, :integer) :: {:ok, integer} | error
   def get_query(conn, index, format \\ :string) do
-    conn
-    |> Conn.fetch_query_params
-    |> Map.get(:query_params)
+    conn.query_params
     |> Map.get(index)
     |> check_format(format)
     |> validate_content(index)
@@ -40,9 +38,7 @@ defmodule Exaggerate.Tools do
 
   @spec get_cookie(Plug.Conn.t, String.t, :string) :: {:ok, String.t} | error
   def get_cookie(conn, index, format \\ :string) do
-    conn
-    |> Conn.fetch_cookies
-    |> Map.get(:cookies)
+    conn.cookies
     |> Map.get(index)
     |> check_format(format)
     |> validate_content(index)
