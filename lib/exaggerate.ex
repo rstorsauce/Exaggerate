@@ -34,8 +34,8 @@ defmodule Exaggerate do
     rootpath = __CALLER__.module |> Module.split
 
     router = Module.concat(rootpath ++ [Macro.camelize(modulename <> "_web"), :Router])
-    endpoint = Module.concat(rootpath ++ [Macro.camelize(modulename <> "_web"), Endpoint])
-    validator = Module.concat(rootpath ++ [Macro.camelize(modulename <> "_web"), Validator])
+    endpoint = Module.concat(rootpath ++ [Macro.camelize(modulename <> "_web"), :Endpoint])
+    validator = Module.concat(rootpath ++ [Macro.camelize(modulename <> "_web"), :Validator])
 
     q = quote do
       defmodule unquote(router) do
@@ -57,7 +57,6 @@ defmodule Exaggerate do
         unquote_splicing(routes)
       end
     end
-
     IO.puts("==================")
     q |> Exaggerate.AST.to_string |> IO.puts
 
@@ -88,10 +87,10 @@ defmodule Exaggerate do
       end
     end
 
-    IO.puts("==================")
-    q |> Exaggerate.AST.to_string |> IO.puts
-
-    q
+    #IO.puts("==================")
+    #q |> Exaggerate.AST.to_string |> IO.puts
+#
+    #q
   end
 
   defp unpack_route({route, route_spec}, module) do

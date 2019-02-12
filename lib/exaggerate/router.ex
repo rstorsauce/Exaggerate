@@ -55,6 +55,7 @@ defmodule Exaggerate.Router do
     |> validate_body(spec)
     |> validate_params(spec)
     |> add_typecheck(spec)
+    |> add_mimecheck(spec)
     |> finalize(spec)
     |> assemble(spec)
 
@@ -341,5 +342,21 @@ defmodule Exaggerate.Router do
     end)
   end
   defp body_needs_check?(_), do: false
+
+  @spec add_mimecheck(t, E.spec_map) :: t
+  defp add_mimecheck(parser, spec) do
+    if needs_mimecheck?(spec) do
+      push_else(parser, quote do
+        {:error, :mimetype} ->
+          send_formatted(var!(conn), 400, "invalid request Content-Type")
+      end)
+    else
+      parser
+    end
+  end
+
+  @spec needs_mimecheck?(E.spec_map) :: boolean
+  defp needs_mimecheck?(%{"requestBody" => _}), do: true
+  defp needs_mimecheck?(_), do: false
 
 end

@@ -68,6 +68,47 @@ defmodule ExaggerateTest.Validation.Schemata do
     }
     """
   end
+
+  defmacro in_body_double do
+    """
+    {
+      "paths": {
+        "/": {
+          "post": {
+            "operationId": "body_test",
+            "description": "pings back foo string",
+            "requestBody": {
+              "description": "anything in an array, really",
+              "required": true,
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "array",
+                    "minItems": 2,
+                    "maxItems": 3
+                  }
+                },
+                "application/x-www-form-urlencoded": {
+                  "schema": {
+                    "type": "object",
+                    "properties":{
+                      "foo":{
+                        "type": "string",
+                        "minLength": 2,
+                        "maxLength": 3
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    """
+  end
+
 end
 
 defmodule ExaggerateTest.Validation.IntegrationTest do
@@ -82,7 +123,7 @@ defmodule ExaggerateTest.Validation.IntegrationTest do
   # we're going to stand up a server here.
   alias Plug.Adapters.Cowboy
 
-  @modules [:InPathWeb, :InQueryWeb, :InBodyWeb]
+  @modules [:InPathWeb, :InQueryWeb, :InBodyWeb, :InBodyDoubleWeb]
   @ports Enum.take_random(2000..15000, 50)
   @portmapper Enum.into(Enum.zip(@modules, @ports), %{})
 
@@ -171,7 +212,6 @@ defmodule ExaggerateTest.Validation.IntegrationTest do
       refute :ok == InBodyWeb.Validator.body_test_content_0([1,2,3,4,5])
     end
 
-    @tag :one
     test "bad content-type fails" do
       resp = HTTPoison.post!("http://localhost:#{@portmapper[:InBodyWeb]}/",
         "[]")
@@ -198,4 +238,65 @@ defmodule ExaggerateTest.Validation.IntegrationTest do
     end
   end
 
+  router "in_body_double", Schemata.in_body_double
+  validator "in_body_double", Schemata.in_body_double
+
+  defmodule InBodyDoubleWeb.Endpoint do
+    def body_test(_conn, value) do
+      {:ok, "received #{inspect value}"}
+    end
+  end
+
+  describe "schema validation in-body for double definition" do
+    test "first body test works as expected" do
+      refute :ok == InBodyDoubleWeb.Validator.body_test_content_0([])
+      assert :ok == InBodyDoubleWeb.Validator.body_test_content_0([1,2,3])
+      refute :ok == InBodyDoubleWeb.Validator.body_test_content_0([1,2,3,4,5])
+    end
+
+    test "too short array fails" do
+      resp = HTTPoison.post!("http://localhost:#{@portmapper[:InBodyDoubleWeb]}/",
+        "[]", [{"Content-Type", "application/json"}])
+      assert resp.status_code == 400
+    end
+
+    test "goldilocks array ok" do
+      resp = HTTPoison.post!("http://localhost:#{@portmapper[:InBodyDoubleWeb]}/",
+        "[1, 2, 3]", [{"Content-Type", "application/json"}])
+      assert resp.status_code == 200
+      assert resp.body == "received [1, 2, 3]"
+    end
+
+    test "too long array fails" do
+      resp = HTTPoison.post!("http://localhost:#{@portmapper[:InBodyDoubleWeb]}/",
+        "[1, 2, 3, 4, 5]", [{"Content-Type", "application/json"}])
+      assert resp.status_code == 400
+    end
+
+    test "second body test works as expected" do
+      refute :ok == InBodyDoubleWeb.Validator.body_test_content_1(%{"foo" => ""})
+      assert :ok == InBodyDoubleWeb.Validator.body_test_content_1(%{"foo" => "abc"})
+      refute :ok == InBodyDoubleWeb.Validator.body_test_content_1(%{"foo" => "abcdef"})
+    end
+
+    test "too short string fails" do
+      resp = HTTPoison.post!("http://localhost:#{@portmapper[:InBodyDoubleWeb]}/",
+        "foo=", [{"Content-Type", "application/x-www-form-urlencoded"}])
+      assert resp.status_code == 400
+    end
+
+    test "goldilocks string ok" do
+      resp = HTTPoison.post!("http://localhost:#{@portmapper[:InBodyDoubleWeb]}/",
+        "foo=bar", [{"Content-Type", "application/x-www-form-urlencoded"}])
+      assert resp.status_code == 200
+      assert resp.body == "received %{\"foo\" => \"bar\"}"
+    end
+
+    test "too long string fails" do
+      resp = HTTPoison.post!("http://localhost:#{@portmapper[:InBodyDoubleWeb]}/",
+        "foo=bababooey", [{"Content-Type", "application/x-www-form-urlencoded"}])
+      assert resp.status_code == 400
+    end
+
+  end
 end
