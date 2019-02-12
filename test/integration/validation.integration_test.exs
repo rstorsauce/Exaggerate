@@ -41,6 +41,27 @@ defmodule ExaggerateTest.Validation.Schemata do
     """
   end
 
+  defmacro in_query_optional do
+    """
+    {
+      "paths": {
+        "/": {
+          "get": {
+            "operationId": "for_foo",
+            "description": "pings back foo string",
+            "parameters": [
+              {"in": "query",
+               "name": "foo",
+               "required": false,
+               "schema": {"type": "string", "minLength": 2, "maxLength": 4}}
+            ]
+          }
+        }
+      }
+    }
+    """
+  end
+
   defmacro in_body do
     """
     {
@@ -185,6 +206,10 @@ defmodule ExaggerateTest.Validation.IntegrationTest do
       resp = HTTPoison.get!("http://localhost:#{@portmapper[:InQueryWeb]}/?foo=cool")
       assert resp.status_code == 200
       assert resp.body == "received cool"
+    end
+    test "nonexistent" do
+      resp = HTTPoison.get!("http://localhost:#{@portmapper[:InQueryWeb]}/?bar=baz")
+      assert resp.status_code == 400
     end
     test "too short string" do
       resp = HTTPoison.get!("http://localhost:#{@portmapper[:InQueryWeb]}/?foo=")

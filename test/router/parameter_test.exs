@@ -125,7 +125,7 @@ defmodule ExaggerateTest.Router.ParameterTest do
       |> AST.to_string
     end
 
-    test "simple path parameter with multiple parameters" do
+    test "simple query parameter with multiple parameters" do
       query_param_res = """
       get "/notes" do
         # Get pet status
@@ -159,6 +159,72 @@ defmodule ExaggerateTest.Router.ParameterTest do
             }]})
       |> AST.to_string
     end
+
+    test "simple path parameter with optional parameter" do
+      query_param_opt_res = """
+      get "/pets/findByStatus" do
+        # Get pet status
+        with {:ok, status} <- Tools.get_query(conn, "status"),
+             {:ok, response} <- @endpoint.user_endpoint(conn, status) do
+          send_formatted(conn, 200, response)
+        else
+          {:error, ecode, response} ->
+            send_formatted(conn, ecode, response)
+        end
+      end
+      """
+
+      assert query_param_opt_res == {"/pets/findByStatus", :get}
+      |> Router.route(
+        %{"operationId" => "user_endpoint",
+          "summary" => "Get pet status",
+          "parameters" => [
+            %{"in" => "query",
+              "name" => "status",
+              "required" => true
+            },
+            %{"in" => "query",
+              "name" => "param1",
+              "required" => false
+            }]})
+      |> AST.to_string
+    end
+
+    test "simple path parameter with typed optional parameter" do
+      query_param_opt_res = """
+      get "/pets/findByStatus" do
+        # Get pet status
+        with {:ok, status} <- Tools.get_query(conn, "status"),
+             {:ok, response} <- @endpoint.user_endpoint(conn, status),
+             :ok <- @validator.user_endpoint_parameter_1(conn.query_params["param1"], false) do
+          send_formatted(conn, 200, response)
+        else
+          {:error, ecode, response} ->
+            send_formatted(conn, ecode, response)
+        end
+      end
+      """
+
+      assert query_param_opt_res == {"/pets/findByStatus", :get}
+      |> Router.route(
+        %{"operationId" => "user_endpoint",
+          "summary" => "Get pet status",
+          "parameters" => [
+            %{"in" => "query",
+              "name" => "status",
+              "required" => true
+            },
+            %{"in" => "query",
+              "name" => "param1",
+              "required" => false,
+              "schema" => %{
+                "type" => "object",
+                "properties" => %{"foo" => %{"type" => "string"}}
+              }
+            }]})
+      |> AST.to_string
+    end
+
   end
 
   describe "header parameters" do
