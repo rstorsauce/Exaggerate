@@ -11,6 +11,7 @@ defmodule Exaggerate.Validator do
     parsed = %__MODULE__{}
     |> build_body(id, spec)
     |> build_param(id, spec)
+    |> build_response(id, spec)
 
     splice_blocks(parsed.methods)
   end
@@ -44,6 +45,45 @@ defmodule Exaggerate.Validator do
     %__MODULE__{parser | methods: parser.methods ++ parserlist}
   end
   def build_param(parser, _, _), do: parser
+
+  @spec build_response(t, String.t, E.nspec_map) :: t
+  def build_response(parser, id, %{"responses" => rmap}) do
+    parserlist = rmap
+    |> Enum.flat_map(&build_response_route(&1, id))
+
+    %__MODULE__{parser | methods: parser.methods ++ parserlist}
+  end
+  def build_response(parser, _, _), do: parser
+
+  def build_response_route({resp_code, %{"content" => cmap}}, id) do
+    cmap
+    |> Enum.with_index
+    |> Enum.map(fn
+      {{_k, %{"schema" => schema}}, idx} ->
+        [id, "response", resp_code, idx]
+        |> Enum.join("_")
+        |> generate_response_block(schema)
+      _ -> nil
+    end)
+    |> Enum.filter(&(&1))
+  end
+  def build_response_route(_), do: []
+
+  @spec generate_response_block(String.t, E.spec_map) :: Macro.t
+  def generate_response_block(label, spec) do
+    label_atom = String.to_atom(label)
+    spec_str = spec
+    |> Jason.encode!(pretty: true)
+    |> ensigil
+
+    schema = {:defschema, [], [[{label_atom, spec_str}]]}
+
+    quote do
+      if Mix.env in [:dev, :test] do
+        unquote(schema)
+      end
+    end
+  end
 
   @spec generate_body_block(String.t, E.spec_map, String.t) :: Macro.t
   def generate_body_block(label, spec, mimetype) do
