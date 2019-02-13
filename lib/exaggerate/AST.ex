@@ -25,7 +25,7 @@ defmodule Exaggerate.AST do
   @noparen_simple [:use, :describe, :test,
                    :defschema, :import, :assert,
                    :raise, :plug, :alias]
-  @noparen_header [:defmodule, :def, :with, :if] ++ @openapi_verbs
+  @noparen_header [:defmodule, :def, :with, :if, :defcheck] ++ @openapi_verbs
   @noparen_dot [:body_params, :query_params]
   # ast conversions
   # remove parentheses from :def, etc.

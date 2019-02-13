@@ -1,5 +1,15 @@
 defmodule Exaggerate.Endpoint do
 
+  defstruct params: [],
+            status: false,
+            check:  false
+
+  @type t::%__MODULE__{
+    params: [atom],
+    status: boolean,
+    check: boolean
+  }
+
   alias Exaggerate.AST
 
   @type endpointmap :: %{required(atom) => list(atom)}
@@ -41,10 +51,23 @@ defmodule Exaggerate.Endpoint do
   This block is intended to be filled out by the user.  @comment values
   are going to be swapped out, later in AST processing, for # comments.
   """
-  @spec block({atom, [atom]}) :: AST.def
+  @spec block({atom, t}) :: Macro.t
   def block({ep, v}), do: block(ep, v)
-  @spec block(atom, [atom]) :: AST.def
-  def block(endpoint, vars) do
+
+  @spec block(atom, t) :: Macro.t
+  def block(endpoint, %__MODULE__{params: vars, check: true}) do
+    raise_str = "error: #{endpoint} not implemented"
+    mvars = Enum.map(vars, fn var -> {var, [], Elixir} end)
+    quote do
+      defcheck unquote(endpoint)(conn, unquote_splicing(mvars)) do
+        @comment "this function is checked"
+        @comment "for the mix Envs :dev and :test."
+        @comment "implement it here."
+        raise unquote(raise_str)
+      end
+    end
+  end
+  def block(endpoint, %__MODULE__{params: vars}) do
     raise_str = "error: #{endpoint} not implemented"
     mvars = Enum.map(vars, fn var -> {var, [], Elixir} end)
     quote do

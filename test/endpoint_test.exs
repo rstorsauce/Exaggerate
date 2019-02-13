@@ -1,6 +1,8 @@
 defmodule ExaggerateTest.EndpointTest do
   use ExUnit.Case
 
+  @moduletag :one
+
   alias Exaggerate.Endpoint
   alias Exaggerate.AST
 
@@ -16,7 +18,7 @@ defmodule ExaggerateTest.EndpointTest do
       """
 
       assert blockcode_res == :testblock
-      |> Endpoint.block([])
+      |> Endpoint.block(%Endpoint{params: []})
       |> AST.to_string
     end
 
@@ -31,7 +33,7 @@ defmodule ExaggerateTest.EndpointTest do
       """
 
       assert blockcode_res == :testblock
-      |> Endpoint.block([:param1])
+      |> Endpoint.block(%Endpoint{params: [:param1]})
       |> AST.to_string
     end
 
@@ -46,7 +48,25 @@ defmodule ExaggerateTest.EndpointTest do
       """
 
       assert blockcode_res == :testblock
-      |> Endpoint.block([:param1, :param2])
+      |> Endpoint.block(%Endpoint{params: [:param1, :param2]})
+      |> AST.to_string
+    end
+  end
+
+  describe "testing tested-endpoint generating defs" do
+    test "endpoint block with no parameters works" do
+
+      blockcode_res = """
+      defcheck testblock(conn, param1) do
+        # this function is checked
+        # for the mix Envs :dev and :test.
+        # implement it here.
+        raise "error: testblock not implemented"
+      end
+      """
+
+      assert blockcode_res == :testblock
+      |> Endpoint.block(%Endpoint{params: [:param1], check: true})
       |> AST.to_string
     end
   end
@@ -91,13 +111,14 @@ defmodule ExaggerateTest.EndpointTest do
   describe "testing endpoint generating modules" do
     test "endpoint module works with one def in the module" do
       assert @one_def_module == "module_test"
-      |> Endpoint.module(%{testblock1: []})
+      |> Endpoint.module(%{testblock1: %Endpoint{params: []}})
       |> AST.to_string
     end
 
     test "endpoint module works with two defs in the module" do
       assert @two_def_module == "module_test"
-      |> Endpoint.module(%{testblock1: [], testblock2: [:param]})
+      |> Endpoint.module(%{testblock1: %Endpoint{params: []},
+                           testblock2: %Endpoint{params: [:param]}})
       |> AST.to_string
     end
   end
@@ -133,8 +154,8 @@ defmodule ExaggerateTest.EndpointTest do
       onedef_file = random_file()
       File.write!(onedef_file, @one_def_module)
       update_map = %{
-        testblock1: [],
-        testblock2: [:param]
+        testblock1: %Endpoint{params: []},
+        testblock2: %Endpoint{params: [:param]}
       }
       Endpoint.update(onedef_file, update_map)
       assert @two_def_module == File.read!(onedef_file)
