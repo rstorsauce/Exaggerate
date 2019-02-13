@@ -9,7 +9,7 @@ defmodule Exaggerate.AST do
   @type rightarrow :: [{:->, context, [Macro.t, ...]}]
   @type leftarrow  :: {:<-, context, [Macro.t, ...]}
 
-  @specials [defparam: 1, defschema: 1, plug: :*, defbodyparam: 1]
+  @specials [defschema: 1, plug: :*]
 
   @spec to_string(Macro.t) :: String.t
   def to_string(ast) do
@@ -22,8 +22,8 @@ defmodule Exaggerate.AST do
 
   @openapi_verbs [:get, :post, :put, :patch,
                   :delete, :head, :options, :trace]
-  @noparen_simple [:use, :describe, :test, :defparam,
-                   :defschema, :defbodyparam, :import, :assert,
+  @noparen_simple [:use, :describe, :test,
+                   :defschema, :import, :assert,
                    :raise, :plug, :alias]
   @noparen_header [:defmodule, :def, :with] ++ @openapi_verbs
   @noparen_dot [:body_params, :query_params]
