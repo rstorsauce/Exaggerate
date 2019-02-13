@@ -42,6 +42,8 @@ defmodule Exaggerate do
         use Plug.Router
 
         alias Exaggerate.Tools
+        alias Exaggerate.Responses
+
         @endpoint unquote(endpoint)
         @validator unquote(validator)
 
@@ -97,10 +99,6 @@ defmodule Exaggerate do
     Enum.map(route_spec, fn {verb, ep_spec} ->
       module.route({route, String.to_atom(verb)}, ep_spec)
     end)
-  end
-
-  def send_formatted(conn, code, response) do
-    Plug.Conn.send_resp(conn, code, response)
   end
 
 end

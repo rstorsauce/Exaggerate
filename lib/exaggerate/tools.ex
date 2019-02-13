@@ -45,15 +45,31 @@ defmodule Exaggerate.Tools do
   end
 
   @spec match_mimetype(Plug.Conn.t, [String.t])::{:ok, String.t} | error
-  def match_mimetype(conn, mimetypes) when is_list(mimetypes) do
-    conn.req_headers
-    |> find_mimetype
+  @spec match_mimetype(String.t, Plug.Conn.t)::{:ok, String.t} | error
+  @doc """
+  when a `Conn` struct is sent as the first term, selects the mimetype
+  declared in `Content-Type` and matches it against a list of supplied
+  mimetypes.
+
+  when a `Conn` struct is sent as the second term, selects one of the
+  acceptable mimetypes declared in `Accept` and matches it against a supplied
+  mimetype.
+  """
+  def match_mimetype(%Plug.Conn{req_headers: req_headers}, mimetypes) when is_list(mimetypes) do
+    req_headers
+    |> find_content_type
     |> Plug.Conn.Utils.media_type
     |> case do
       {:ok, conn_type, conn_subtype, _} ->
         match_mimetype({conn_type, conn_subtype}, mimetypes, nil)
       :error -> {:error, :mimetype}
     end
+  end
+  def match_mimetype(mimetype, %Plug.Conn{req_headers: req_headers}) do
+    {:ok, conn_type, conn_subtype, _} =
+      Plug.Conn.Utils.media_type(mimetype)
+    mimetypes = find_accept_type(req_headers)
+    match_mimetype({conn_type, conn_subtype}, mimetypes, "*/*")
   end
 
   @spec match_mimetype({String.t, String.t}, [String.t], String.t | nil) :: String.t
@@ -81,10 +97,19 @@ defmodule Exaggerate.Tools do
     end
   end
 
-  @spec find_mimetype([{String.t, String.t}])::String.t
-  defp find_mimetype([]), do: {:error, :mimetype}
-  defp find_mimetype([{"content-type", c} | _]), do: c
-  defp find_mimetype([_ | tail]), do: find_mimetype(tail)
+  @spec find_content_type([{String.t, String.t}])::String.t
+  defp find_content_type([]), do: {:error, :mimetype}
+  defp find_content_type([{"content-type", c} | _]), do: c
+  defp find_content_type([_ | tail]), do: find_content_type(tail)
+
+  @spec find_accept_type([{String.t, String.t}])::[String.t]
+  defp find_accept_type([]), do: ["*/*"]
+  defp find_accept_type([{"accept", accept} | _]) do
+    accept
+    |> String.split(",")
+    |> Enum.map(&String.trim/1)
+  end
+  defp find_accept_type([_ | tail]), do: find_accept_type(tail)
 
   @spec get_body(Plug.Conn.t) :: {:ok, any}
   def get_body(conn) do

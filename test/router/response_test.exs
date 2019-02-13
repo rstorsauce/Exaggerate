@@ -13,10 +13,10 @@ defmodule ExaggerateTest.Router.ResponseTest do
       blockcode_res = """
       put "/test" do
         with {:ok, response} <- @endpoint.test_endpoint(conn) do
-          send_formatted(conn, 201, response)
+          Responses.send_formatted(conn, 201, response)
         else
           {:error, ecode, response} ->
-            send_formatted(conn, ecode, response)
+            Responses.send_formatted(conn, ecode, response)
         end
       end
       """
@@ -32,10 +32,10 @@ defmodule ExaggerateTest.Router.ResponseTest do
       blockcode_res = """
       put "/test" do
         with {:ok, code, response} <- @endpoint.test_endpoint(conn) do
-          send_formatted(conn, code, response)
+          Responses.send_formatted(conn, code, response)
         else
           {:error, ecode, response} ->
-            send_formatted(conn, ecode, response)
+            Responses.send_formatted(conn, ecode, response)
         end
       end
       """
@@ -52,10 +52,10 @@ defmodule ExaggerateTest.Router.ResponseTest do
       blockcode_res = """
       put "/test" do
         with {:ok, code, response} <- @endpoint.test_endpoint(conn) do
-          send_formatted(conn, code, response)
+          Responses.send_formatted(conn, code, response)
         else
           {:error, ecode, response} ->
-            send_formatted(conn, ecode, response)
+            Responses.send_formatted(conn, ecode, response)
         end
       end
       """

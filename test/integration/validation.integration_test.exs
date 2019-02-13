@@ -134,7 +134,7 @@ end
 
 defmodule ExaggerateTest.Validation.IntegrationTest do
 
-  use ExUnit.Case #, async: true
+  use ExUnit.Case, async: true
   import Exaggerate
 
   #alias and require our repository of Schemata

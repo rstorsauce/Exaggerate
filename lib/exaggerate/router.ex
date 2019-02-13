@@ -260,7 +260,7 @@ defmodule Exaggerate.Router do
     end
     |> push_else(quote do
       {:error, ecode, response} ->
-        send_formatted(var!(conn), ecode, response)
+        Responses.send_formatted(var!(conn), ecode, response)
     end)
   end
 
@@ -299,7 +299,7 @@ defmodule Exaggerate.Router do
 
     with_ast = AST.generate_with(
       parser.guards,
-      quote do send_formatted(var!(conn), unquote(code), response) end,
+      quote do Responses.send_formatted(var!(conn), unquote(code), response) end,
       parser.elses
     )
 
@@ -341,7 +341,7 @@ defmodule Exaggerate.Router do
     if needs_typecheck?(spec) do
       push_else(parser, quote do
         {:mismatch, {loc, val}} ->
-          send_formatted(var!(conn), 400, "invalid parameter value")
+          Responses.send_formatted(var!(conn), 400, "invalid parameter value")
       end)
     else
       parser
@@ -379,7 +379,7 @@ defmodule Exaggerate.Router do
     if needs_mimecheck?(spec) do
       push_else(parser, quote do
         {:error, :mimetype} ->
-          send_formatted(var!(conn), 400, "invalid request Content-Type")
+          Responses.send_formatted(var!(conn), 400, "invalid request Content-Type")
       end)
     else
       parser

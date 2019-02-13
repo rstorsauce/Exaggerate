@@ -17,13 +17,13 @@ defmodule ExaggerateTest.Router.RequestBodyTest do
              {:ok, content} <- Tools.get_body(conn),
              :ok <- @validator.do_a_thing_content_0(content, content_type, "application/json"),
              {:ok, response} <- @endpoint.do_a_thing(conn, content) do
-          send_formatted(conn, 200, response)
+          Responses.send_formatted(conn, 200, response)
         else
           {:error, :mimetype} ->
-            send_formatted(conn, 400, "invalid request Content-Type")
+            Responses.send_formatted(conn, 400, "invalid request Content-Type")
 
           {:error, ecode, response} ->
-            send_formatted(conn, ecode, response)
+            Responses.send_formatted(conn, ecode, response)
         end
       end
       """
@@ -58,13 +58,13 @@ defmodule ExaggerateTest.Router.RequestBodyTest do
                  "application/x-www-form-urlencoded"
                ),
              {:ok, response} <- @endpoint.do_another_thing(conn, content) do
-          send_formatted(conn, 200, response)
+          Responses.send_formatted(conn, 200, response)
         else
           {:error, :mimetype} ->
-            send_formatted(conn, 400, "invalid request Content-Type")
+            Responses.send_formatted(conn, 400, "invalid request Content-Type")
 
           {:error, ecode, response} ->
-            send_formatted(conn, ecode, response)
+            Responses.send_formatted(conn, ecode, response)
         end
       end
       """

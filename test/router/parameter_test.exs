@@ -15,10 +15,10 @@ defmodule ExaggerateTest.Router.ParameterTest do
         # Get a user by ID
         with {:ok, user_id} <- Tools.get_path(conn, "user_id"),
              {:ok, response} <- @endpoint.user_endpoint(conn, user_id) do
-          send_formatted(conn, 200, response)
+          Responses.send_formatted(conn, 200, response)
         else
           {:error, ecode, response} ->
-            send_formatted(conn, ecode, response)
+            Responses.send_formatted(conn, ecode, response)
         end
       end
       """
@@ -42,10 +42,10 @@ defmodule ExaggerateTest.Router.ParameterTest do
         # Get a user by ID
         with {:ok, user_id} <- Tools.get_path(conn, "user_id", :integer),
              {:ok, response} <- @endpoint.user_endpoint(conn, user_id) do
-          send_formatted(conn, 200, response)
+          Responses.send_formatted(conn, 200, response)
         else
           {:error, ecode, response} ->
-            send_formatted(conn, ecode, response)
+            Responses.send_formatted(conn, ecode, response)
         end
       end
       """
@@ -71,10 +71,10 @@ defmodule ExaggerateTest.Router.ParameterTest do
         with {:ok, car_id} <- Tools.get_path(conn, "car_id"),
              {:ok, driver_id} <- Tools.get_path(conn, "driver_id"),
              {:ok, response} <- @endpoint.user_endpoint(conn, car_id, driver_id) do
-          send_formatted(conn, 200, response)
+          Responses.send_formatted(conn, 200, response)
         else
           {:error, ecode, response} ->
-            send_formatted(conn, ecode, response)
+            Responses.send_formatted(conn, ecode, response)
         end
       end
       """
@@ -107,10 +107,10 @@ defmodule ExaggerateTest.Router.ParameterTest do
 
         with {:ok, status} <- Tools.get_query(conn, "status"),
              {:ok, response} <- @endpoint.user_endpoint(conn, status) do
-          send_formatted(conn, 200, response)
+          Responses.send_formatted(conn, 200, response)
         else
           {:error, ecode, response} ->
-            send_formatted(conn, ecode, response)
+            Responses.send_formatted(conn, ecode, response)
         end
       end
       """
@@ -136,10 +136,10 @@ defmodule ExaggerateTest.Router.ParameterTest do
         with {:ok, offset} <- Tools.get_query(conn, "offset", :integer),
              {:ok, limit} <- Tools.get_query(conn, "limit", :integer),
              {:ok, response} <- @endpoint.user_endpoint(conn, offset, limit) do
-          send_formatted(conn, 200, response)
+          Responses.send_formatted(conn, 200, response)
         else
           {:error, ecode, response} ->
-            send_formatted(conn, ecode, response)
+            Responses.send_formatted(conn, ecode, response)
         end
       end
       """
@@ -172,10 +172,10 @@ defmodule ExaggerateTest.Router.ParameterTest do
 
         with {:ok, status} <- Tools.get_query(conn, "status"),
              {:ok, response} <- @endpoint.user_endpoint(conn, status) do
-          send_formatted(conn, 200, response)
+          Responses.send_formatted(conn, 200, response)
         else
           {:error, ecode, response} ->
-            send_formatted(conn, ecode, response)
+            Responses.send_formatted(conn, ecode, response)
         end
       end
       """
@@ -205,13 +205,13 @@ defmodule ExaggerateTest.Router.ParameterTest do
         with {:ok, status} <- Tools.get_query(conn, "status"),
              :ok <- @validator.user_endpoint_parameters_1_trampoline(conn.query_params["param1"]),
              {:ok, response} <- @endpoint.user_endpoint(conn, status) do
-          send_formatted(conn, 200, response)
+          Responses.send_formatted(conn, 200, response)
         else
           {:mismatch, {loc, val}} ->
-            send_formatted(conn, 400, "invalid parameter value")
+            Responses.send_formatted(conn, 400, "invalid parameter value")
 
           {:error, ecode, response} ->
-            send_formatted(conn, ecode, response)
+            Responses.send_formatted(conn, ecode, response)
         end
       end
       """
@@ -245,10 +245,10 @@ defmodule ExaggerateTest.Router.ParameterTest do
         # Checks if the server is alive
         with {:ok, x_request_id} <- Tools.get_header(conn, "X-Request-ID", :string),
              {:ok, response} <- @endpoint.user_endpoint(conn, x_request_id) do
-          send_formatted(conn, 200, response)
+          Responses.send_formatted(conn, 200, response)
         else
           {:error, ecode, response} ->
-            send_formatted(conn, ecode, response)
+            Responses.send_formatted(conn, ecode, response)
         end
       end
       """
@@ -278,13 +278,13 @@ defmodule ExaggerateTest.Router.ParameterTest do
              {:ok, csrftoken} <- Tools.get_cookie(conn, "csrftoken", :string),
              :ok <- @validator.user_endpoint_parameters_0(debug),
              {:ok, response} <- @endpoint.user_endpoint(conn, debug, csrftoken) do
-          send_formatted(conn, 200, response)
+          Responses.send_formatted(conn, 200, response)
         else
           {:mismatch, {loc, val}} ->
-            send_formatted(conn, 400, "invalid parameter value")
+            Responses.send_formatted(conn, 400, "invalid parameter value")
 
           {:error, ecode, response} ->
-            send_formatted(conn, ecode, response)
+            Responses.send_formatted(conn, ecode, response)
         end
       end
       """
