@@ -11,8 +11,6 @@ defmodule ExaggerateTest.Validator.ParameterTest do
   describe "path parameters" do
     test "with a schema" do
       path_validation_res = """
-      defparam :user_endpoint_parameters_0
-
       defschema user_endpoint_parameters_0: \"""
                 {
                   "type": "integer"

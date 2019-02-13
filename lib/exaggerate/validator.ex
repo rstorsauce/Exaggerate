@@ -21,7 +21,7 @@ defmodule Exaggerate.Validator do
     |> Enum.with_index
     |> Enum.map(fn
       {{mimetype, %{"schema" => smap}}, idx} ->
-        generate_defschema(id <> "_content_" <> inspect(idx), smap, mimetype)
+        generate_body_block(id <> "_content_" <> inspect(idx), smap, mimetype)
       _ -> nil
     end)
     |> Enum.filter(&(&1))
@@ -34,8 +34,9 @@ defmodule Exaggerate.Validator do
   def build_param(parser, id, %{"parameters" => pmap}) do
     parserlist = pmap
     |> Enum.with_index
-    |> Enum.map(fn {%{"schema" => smap}, idx} ->
-        generate_defschema(id <> "_parameters_" <> inspect(idx), smap)
+    |> Enum.map(fn {def = %{"schema" => smap}, idx} ->
+        generate_parameter_block(id <> "_parameters_" <> inspect(idx),
+          smap, def["required"])
       _ -> nil
     end)
     |> Enum.filter(&(&1))
@@ -44,24 +45,34 @@ defmodule Exaggerate.Validator do
   end
   def build_param(parser, _, _), do: parser
 
-  @spec generate_defschema(String.t, E.spec_map, String.t) :: Macro.t
-  def generate_defschema(label, spec, mimetype) do
+  @spec generate_body_block(String.t, E.spec_map, String.t) :: Macro.t
+  def generate_body_block(label, spec, mimetype) do
     label_atom = String.to_atom(label)
     spec_str = spec
     |> Jason.encode!(pretty: true)
     |> ensigil
 
-    bodyparam = {:defbodyparam, [], [[{label_atom, mimetype}]]}
     schema = {:defschema, [], [[{label_atom, spec_str}]]}
 
     quote do
-      unquote(bodyparam)
+      @spec unquote(label_atom)(Exonerate.json, String.t, String.t) :: :ok | Exaggerate.error
+      def unquote(label_atom)(content, unquote(mimetype), unquote(mimetype)) do
+        unquote(label_atom)(content)
+      end
+      def unquote(label_atom)(_, _, _) do
+        :ok
+      end
       unquote(schema)
     end
   end
 
-  @spec generate_defschema(String.t, E.spec_map) :: Macro.t
-  def generate_defschema(label, spec) do
+  @spec generate_parameter_block(String.t, E.spec_map, boolean) :: Macro.t
+  @doc """
+  generates a validation block for a particular test, based on the
+  `parameter` archetype.  This is a trampoline, if it's optional,
+  followed by a defschema statement (pulling from exonerate).
+  """
+  def generate_parameter_block(label, spec, required) do
     label_atom = String.to_atom(label)
     spec_str = spec
     |> Jason.encode!(pretty: true)
@@ -69,9 +80,21 @@ defmodule Exaggerate.Validator do
 
     schema = {:defschema, [], [[{label_atom, spec_str}]]}
 
-    quote do
-      defparam unquote(label_atom)
-      unquote(schema)
+    if required do
+      schema
+    else
+      trampoline = String.to_atom(label <> "_trampoline")
+      quote do
+        @spec unquote(trampoline)(Exonerate.json) :: :ok | Exaggerate.error
+        def unquote(trampoline)(content) do
+          if is_nil(content) do
+            :ok
+          else
+            unquote(label_atom)(content)
+          end
+        end
+        unquote(schema)
+      end
     end
   end
 

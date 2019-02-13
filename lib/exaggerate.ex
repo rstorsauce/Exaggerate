@@ -103,32 +103,4 @@ defmodule Exaggerate do
     Plug.Conn.send_resp(conn, code, response)
   end
 
-  defmacro defparam(method) do
-    quote do
-      @spec unquote(method)(Exonerate.json, boolean) :: :ok | Exaggerate.error
-      def unquote(method)(content, true) do
-        unquote(method)(content)
-      end
-      def unquote(method)(content, false) do
-        if is_nil(content) do
-          :ok
-        else
-          unquote(method)(content)
-        end
-      end
-    end
-  end
-
-  defmacro defbodyparam([{method, mimetype}]) do
-    quote do
-      @spec unquote(method)(Exonerate.json, String.t, String.t) :: :ok | Exaggerate.error
-      def unquote(method)(content, unquote(mimetype), unquote(mimetype)) do
-        unquote(method)(content)
-      end
-      def unquote(method)(_, _, _) do
-        :ok
-      end
-    end
-  end
-
 end

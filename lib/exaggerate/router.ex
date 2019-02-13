@@ -169,8 +169,8 @@ defmodule Exaggerate.Router do
     parser
   end
 
-  defp validator(id, type, idx) do
-    [id, type, inspect idx]
+  defp validator(id, type, idx, suffix \\ []) do
+    [id, type, inspect(idx)] ++ suffix
     |> Enum.join("_")
     |> String.to_atom
   end
@@ -230,15 +230,15 @@ defmodule Exaggerate.Router do
     name_ast = AST.var_ast(var_name)
 
     quote do
-      :ok <- @validator.unquote(method)(unquote(name_ast), true)
+      :ok <- @validator.unquote(method)(unquote(name_ast))
     end
   end
   defp validate_param({%{"in" => _location,
                          "name" => name,
                          "schema" => _}, idx}, id) do
-    method = validator(id, "parameters", idx)
+    method = validator(id, "parameters", idx, ["trampoline"])
     quote do
-      :ok <- @validator.unquote(method)(var!(conn).query_params[unquote(name)], false)
+      :ok <- @validator.unquote(method)(var!(conn).query_params[unquote(name)])
     end
   end
   defp validate_param(_, _), do: nil

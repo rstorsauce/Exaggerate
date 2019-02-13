@@ -11,7 +11,14 @@ defmodule ExaggerateTest.Validator.RequestBodyTest do
   describe "really trivial requestbody " do
     test "single content route" do
       router_res = """
-      defbodyparam do_a_thing_content_0: "application/json"
+      @spec do_a_thing_content_0(Exonerate.json(), String.t(), String.t()) :: :ok | Exaggerate.error()
+      def do_a_thing_content_0(content, "application/json", "application/json") do
+        do_a_thing_content_0(content)
+      end
+
+      def do_a_thing_content_0(_, _, _) do
+        :ok
+      end
 
       defschema do_a_thing_content_0: "true"
       """
@@ -33,11 +40,25 @@ defmodule ExaggerateTest.Validator.RequestBodyTest do
 
     test "multiple content route" do
       router_res = """
-      defbodyparam do_a_thing_content_0: "application/json"
+      @spec do_a_thing_content_0(Exonerate.json(), String.t(), String.t()) :: :ok | Exaggerate.error()
+      def do_a_thing_content_0(content, "application/json", "application/json") do
+        do_a_thing_content_0(content)
+      end
+
+      def do_a_thing_content_0(_, _, _) do
+        :ok
+      end
 
       defschema do_a_thing_content_0: "true"
 
-      defbodyparam do_a_thing_content_1: "multipart/form-data"
+      @spec do_a_thing_content_1(Exonerate.json(), String.t(), String.t()) :: :ok | Exaggerate.error()
+      def do_a_thing_content_1(content, "multipart/form-data", "multipart/form-data") do
+        do_a_thing_content_1(content)
+      end
+
+      def do_a_thing_content_1(_, _, _) do
+        :ok
+      end
 
       defschema do_a_thing_content_1: \"""
                 {

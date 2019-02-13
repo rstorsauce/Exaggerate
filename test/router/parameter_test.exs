@@ -203,7 +203,7 @@ defmodule ExaggerateTest.Router.ParameterTest do
         conn = Plug.Conn.fetch_query_params(conn)
 
         with {:ok, status} <- Tools.get_query(conn, "status"),
-             :ok <- @validator.user_endpoint_parameters_1(conn.query_params["param1"], false),
+             :ok <- @validator.user_endpoint_parameters_1_trampoline(conn.query_params["param1"]),
              {:ok, response} <- @endpoint.user_endpoint(conn, status) do
           send_formatted(conn, 200, response)
         else
@@ -276,7 +276,7 @@ defmodule ExaggerateTest.Router.ParameterTest do
 
         with {:ok, debug} <- Tools.get_cookie(conn, "debug", :integer),
              {:ok, csrftoken} <- Tools.get_cookie(conn, "csrftoken", :string),
-             :ok <- @validator.user_endpoint_parameters_0(debug, true),
+             :ok <- @validator.user_endpoint_parameters_0(debug),
              {:ok, response} <- @endpoint.user_endpoint(conn, debug, csrftoken) do
           send_formatted(conn, 200, response)
         else
