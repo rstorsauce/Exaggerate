@@ -2,12 +2,12 @@ defmodule Exaggerate.Endpoint do
 
   defstruct params: [],
             status: false,
-            check:  false
+            type: false
 
   @type t::%__MODULE__{
     params: [atom],
     status: boolean,
-    check: boolean
+    type: boolean
   }
 
   alias Exaggerate.AST
@@ -55,18 +55,6 @@ defmodule Exaggerate.Endpoint do
   def block({ep, v}), do: block(ep, v)
 
   @spec block(atom, t) :: Macro.t
-  def block(endpoint, %__MODULE__{params: vars, check: true}) do
-    raise_str = "error: #{endpoint} not implemented"
-    mvars = Enum.map(vars, fn var -> {var, [], Elixir} end)
-    quote do
-      defcheck unquote(endpoint)(conn, unquote_splicing(mvars)) do
-        @comment "this function is checked"
-        @comment "for the mix Envs :dev and :test."
-        @comment "implement it here."
-        raise unquote(raise_str)
-      end
-    end
-  end
   def block(endpoint, %__MODULE__{params: vars}) do
     raise_str = "error: #{endpoint} not implemented"
     mvars = Enum.map(vars, fn var -> {var, [], Elixir} end)

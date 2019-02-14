@@ -59,6 +59,7 @@ defmodule Exaggerate.Router do
     |> add_typecheck(spec)
     |> add_mimecheck(spec)
     |> finalize(spec)
+    |> validate_response(spec)
     |> assemble(spec)
 
     path! = AST.swagger_to_sinatra(path!)
@@ -242,6 +243,25 @@ defmodule Exaggerate.Router do
     end
   end
   defp validate_param(_, _), do: nil
+
+  @spec validate_response(t, E.spec_map) :: t
+  defp validate_response(parser, %{"operationId" => id,
+                                   "responses" => rlist}) do
+    if Enum.any?(rlist, &resp_needs_validation(&1)) do
+      response_method = String.to_atom(id <> "_response")
+      push_guard(parser, quote do
+        :ok <- @validator.unquote(response_method)(response)
+      end)
+    else
+      parser
+    end
+  end
+  defp validate_response(parser, _), do: parser
+
+  defp resp_needs_validation({_k, %{"content" => cmap}}) do
+    Enum.any?(cmap, fn {_k, v} -> Map.has_key?(v, "schema") end)
+  end
+  defp resp_needs_validation(_), do: false
 
   @spec finalize(t, E.spec_map) :: t
   defp finalize(parser, spec = %{"operationId" => id}) do
