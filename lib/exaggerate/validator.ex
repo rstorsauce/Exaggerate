@@ -46,31 +46,55 @@ defmodule Exaggerate.Validator do
   end
   def build_param(parser, _, _), do: parser
 
-  @spec build_response(t, String.t, E.nspec_map) :: t
+  @spec build_response(t, String.t, E.spec_map) :: t
   def build_response(parser, id, %{"responses" => rmap}) do
-    parserlist = rmap
-    |> Enum.flat_map(&build_response_route(&1, id))
+
+    # check if there's one response validator necessary or
+    # more than one response validator necessary
+
+    ss = single_success_code?(rmap)
+
+    parserlist =
+      Enum.flat_map(rmap, &build_response_route(&1, id, ss))
 
     %__MODULE__{parser | methods: parser.methods ++ parserlist}
   end
   def build_response(parser, _, _), do: parser
 
-  def build_response_route({resp_code, %{"content" => cmap}}, id) do
+  @spec single_success_code?(E.spec_map) :: boolean
+  defp single_success_code?(rmap) do
+    rmap |> IO.inspect(label: "66")
+    1 == (Enum.count(rmap, fn
+      {k, v} -> String.to_integer(k) < 300 && has_schema?(v)
+    end) |> IO.inspect(label: "68"))
+  end
+
+  @spec has_schema?(E.spec_map) :: boolean
+  defp has_schema?(%{"content" => cmap}) do
+    Enum.any?(cmap, fn {_k, v} -> Map.has_key?(v, "schema") end)
+  end
+  defp has_schema?(_), do: false
+
+  @spec build_response_route({String.t, E.spec_map},
+                             String.t,
+                             boolean | String.t)::[Macro.t]
+  def build_response_route({resp_code, %{"content" => cmap}}, id, ss) do
     cmap
     |> Enum.with_index
     |> Enum.map(fn
       {{_k, %{"schema" => schema}}, idx} ->
         [id, "response", resp_code, idx]
         |> Enum.join("_")
-        |> generate_response_block(schema)
+        |> generate_response_block(schema, id, ss || resp_code)
       _ -> nil
     end)
     |> Enum.filter(&(&1))
   end
-  def build_response_route(_), do: []
+  def build_response_route(_, _, _), do: []
 
-  @spec generate_response_block(String.t, E.spec_map) :: Macro.t
-  def generate_response_block(label, spec) do
+  @spec generate_response_block(String.t, E.spec_map, String.t, boolean | String.t) :: Macro.t
+  def generate_response_block(label, spec, id, true) do
+    id_atom = String.to_atom(id <> "_response")
     label_atom = String.to_atom(label)
     spec_str = spec
     |> Jason.encode!(pretty: true)
@@ -80,9 +104,25 @@ defmodule Exaggerate.Validator do
 
     quote do
       if Mix.env in [:dev, :test] do
+
+        def unquote(id_atom)({:ok, resp}) do
+          unquote(label_atom)(resp)
+        end
+        def unquote(id_atom)(_) do
+          :ok
+        end
+
         unquote(schema)
+
+      else
+        def unquote(id_atom)(_) do
+          :ok
+        end
       end
     end
+  end
+  def generate_response_block(label, spec, id, _) do
+    quote do nil end
   end
 
   @spec generate_body_block(String.t, E.spec_map, String.t) :: Macro.t
