@@ -27,10 +27,15 @@ defmodule ExaggerateTest.Validator.ResponseTest do
   """
 
   describe "basic response filter" do
+    @tag :one
     test "correctly creates a response macro" do
       router_res = """
       if Mix.env() in [:dev, :test] do
         def root_response({:ok, resp}) do
+          root_response({:ok, 200, resp})
+        end
+
+        def root_response({:ok, 200, resp}) do
           root_response_200_0(resp)
         end
 
@@ -88,6 +93,10 @@ defmodule ExaggerateTest.Validator.ResponseTest do
       router_res = """
       if Mix.env() in [:dev, :test] do
         def root_response({:ok, resp}) do
+          root_response({:ok, 201, resp})
+        end
+
+        def root_response({:ok, 201, resp}) do
           root_response_201_0(resp)
         end
 
@@ -148,16 +157,24 @@ defmodule ExaggerateTest.Validator.ResponseTest do
       router_res = """
       if Mix.env() in [:dev, :test] do
         def root_response({:ok, resp}) do
+          root_response({:ok, 200, resp})
+        end
+
+        def root_response({:ok, 200, resp}) do
           resp
           |> case do
             {:file, path} ->
               {MIME.from_path(path), File.read!(resp)}
+
             _ ->
               {"application/json", resp}
           end
           |> case do
-            {"application/json", value} -> root_response_200_0(value)
-            {"image/jpeg", value} -> root_response_200_1(value)
+            {"application/json", value} ->
+              root_response_200_0(value)
+
+            {"image/jpeg", value} ->
+              root_response_200_1(value)
           end
         end
 
@@ -176,8 +193,7 @@ defmodule ExaggerateTest.Validator.ResponseTest do
                   }
                   \"""
 
-        defschema root_response_200_1: ~s(true)
-
+        defschema root_response_200_1: "true"
       else
         def root_response(_) do
           :ok
@@ -186,7 +202,7 @@ defmodule ExaggerateTest.Validator.ResponseTest do
       """
 
       assert router_res == {"/test", :post}
-      |> Validator.route(Jason.decode!(@alt_code_route))
+      |> Validator.route(Jason.decode!(@multi_type_route))
       |> AST.to_string
     end
   end

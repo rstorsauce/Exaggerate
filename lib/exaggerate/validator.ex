@@ -5,6 +5,7 @@ defmodule Exaggerate.Validator do
   @type t :: %__MODULE__{methods: [Macro.t]}
 
   alias Exaggerate, as: E
+  alias Exaggerate.AST
 
   @spec route(E.route, E.spec_map) :: Macro.t
   def route({_path, _verb}, spec = %{"operationId" => id}) do
@@ -13,7 +14,7 @@ defmodule Exaggerate.Validator do
     |> build_param(id, spec)
     |> build_response(id, spec)
 
-    splice_blocks(parsed.methods)
+    AST.splice_blocks(parsed.methods)
   end
 
   @spec build_body(t, String.t, E.spec_map) :: t
@@ -48,89 +49,21 @@ defmodule Exaggerate.Validator do
 
   @spec build_response(t, String.t, E.spec_map) :: t
   def build_response(parser, id, %{"responses" => rmap}) do
-
-    # check if there's one response validator necessary or
-    # more than one response validator necessary
-
-    ss = single_success_code?(rmap)
-
-    parserlist =
-      Enum.flat_map(rmap, &build_response_route(&1, id, ss))
-
-    %__MODULE__{parser | methods: parser.methods ++ parserlist}
-  end
-  def build_response(parser, _, _), do: parser
-
-  @spec single_success_code?(E.spec_map) :: boolean
-  defp single_success_code?(rmap) do
-    rmap |> IO.inspect(label: "66")
-    1 == (Enum.count(rmap, fn
-      {k, v} -> String.to_integer(k) < 300 && has_schema?(v)
-    end) |> IO.inspect(label: "68"))
-  end
-
-  @spec has_schema?(E.spec_map) :: boolean
-  defp has_schema?(%{"content" => cmap}) do
-    Enum.any?(cmap, fn {_k, v} -> Map.has_key?(v, "schema") end)
-  end
-  defp has_schema?(_), do: false
-
-  @spec build_response_route({String.t, E.spec_map},
-                             String.t,
-                             boolean | String.t)::[Macro.t]
-  def build_response_route({resp_code, %{"content" => cmap}}, id, ss) do
-    cmap
-    |> Enum.with_index
-    |> Enum.map(fn
-      {{_k, %{"schema" => schema}}, idx} ->
-        [id, "response", resp_code, idx]
-        |> Enum.join("_")
-        |> generate_response_block(schema, id, ss || resp_code)
-      _ -> nil
-    end)
-    |> Enum.filter(&(&1))
-  end
-  def build_response_route(_, _, _), do: []
-
-  @spec generate_response_block(String.t, E.spec_map, String.t, boolean | String.t) :: Macro.t
-  def generate_response_block(label, spec, id, true) do
-    id_atom = String.to_atom(id <> "_response")
-    label_atom = String.to_atom(label)
-    spec_str = spec
-    |> Jason.encode!(pretty: true)
-    |> ensigil
-
-    schema = {:defschema, [], [[{label_atom, spec_str}]]}
-
-    quote do
-      if Mix.env in [:dev, :test] do
-
-        def unquote(id_atom)({:ok, resp}) do
-          unquote(label_atom)(resp)
-        end
-        def unquote(id_atom)(_) do
-          :ok
-        end
-
-        unquote(schema)
-
-      else
-        def unquote(id_atom)(_) do
-          :ok
-        end
-      end
+    case Exaggerate.Validator.Response.block(id, rmap) do
+      block ->
+        %__MODULE__{parser | methods: parser.methods ++ [block]}
+      nil ->
+        parser
     end
   end
-  def generate_response_block(label, spec, id, _) do
-    quote do nil end
-  end
+  def build_response(parser, _, _), do: parser
 
   @spec generate_body_block(String.t, E.spec_map, String.t) :: Macro.t
   def generate_body_block(label, spec, mimetype) do
     label_atom = String.to_atom(label)
     spec_str = spec
     |> Jason.encode!(pretty: true)
-    |> ensigil
+    |> AST.ensigil
 
     schema = {:defschema, [], [[{label_atom, spec_str}]]}
 
@@ -156,7 +89,7 @@ defmodule Exaggerate.Validator do
     label_atom = String.to_atom(label)
     spec_str = spec
     |> Jason.encode!(pretty: true)
-    |> ensigil
+    |> AST.ensigil
 
     schema = {:defschema, [], [[{label_atom, spec_str}]]}
 
@@ -176,23 +109,6 @@ defmodule Exaggerate.Validator do
         unquote(schema)
       end
     end
-  end
-
-  @spec ensigil(String.t) :: Macro.t
-  defp ensigil(string) do
-    {:sigil_s,
-      [context: Elixir, import: Kernel],
-      [{:<<>>, [], [string]}, []]}
-  end
-
-  @spec splice_blocks([Macro.t]) :: Macro.t
-  def splice_blocks(blocklist) do
-    {:__block__, [],
-      Enum.flat_map(blocklist, fn
-        {:__block__, [], list} -> list
-        any -> [any]
-      end)
-    }
   end
 
 end

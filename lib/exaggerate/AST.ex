@@ -91,6 +91,14 @@ defmodule Exaggerate.AST do
     }
   end
 
+  def generate_piped_case(else_list!) do
+    else_list! = Enum.map(else_list!, fn
+      [v = {:->, _, _}] -> v
+      v = {:->, _, _} -> v
+    end)
+    {:case, [], [[do: else_list!]]}
+  end
+
   @endpoint {:@, [context: Elixir, import: Kernel],
                [{:endpoint, [context: Elixir], Elixir}]}
   @conn {:var!, [context: Elixir, import: Kernel], [{:conn, [], Elixir}]}
