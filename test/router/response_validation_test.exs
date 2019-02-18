@@ -5,13 +5,16 @@ defmodule ExaggerateTest.Router.ResponseValidationTest do
   alias Exaggerate.AST
 
   describe "testing tested-endpoint generating defs" do
+    @tag :one
     test "simplest router" do
       blockcode_res = """
       get "/test" do
-        with {:ok, response} <- @endpoint.test_endpoint(conn),
-             :ok <- @validator.test_endpoint_response(response) do
+        with {:ok, response} <- @validator.test_endpoint_response(@endpoint.test_endpoint(conn)) do
           Responses.send_formatted(conn, 200, response)
         else
+          {:ok, code, response} ->
+            Responses.send_formatted(conn, code, response)
+
           {:error, ecode, response} ->
             Responses.send_formatted(conn, ecode, response)
         end

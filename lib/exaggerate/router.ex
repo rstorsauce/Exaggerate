@@ -55,11 +55,9 @@ defmodule Exaggerate.Router do
     |> build_body(spec)
     |> build_params(spec)
     |> validate_body(spec)
-    |> validate_params(spec)
     |> add_typecheck(spec)
     |> add_mimecheck(spec)
     |> finalize(spec)
-    |> validate_response(spec)
     |> assemble(spec)
 
     path! = AST.swagger_to_sinatra(path!)
@@ -244,28 +242,20 @@ defmodule Exaggerate.Router do
   end
   defp validate_param(_, _), do: nil
 
-  @spec validate_response(t, E.spec_map) :: t
-  defp validate_response(parser, %{"operationId" => id,
-                                   "responses" => rlist}) do
-    if Enum.any?(rlist, &resp_needs_validation(&1)) do
-      response_method = String.to_atom(id <> "_response")
-      push_guard(parser, quote do
-        :ok <- @validator.unquote(response_method)(response)
-      end)
-    else
-      parser
-    end
+  defp resp_needs_validation?(%{"responses" => rmap}) do
+    Enum.any?(rmap, fn {_code, cmap} -> code_needs_validation?(cmap) end)
   end
-  defp validate_response(parser, _), do: parser
-
-  defp resp_needs_validation({_k, %{"content" => cmap}}) do
+  defp resp_needs_validation?(_), do: false
+  defp code_needs_validation?(%{"content" => cmap}) do
     Enum.any?(cmap, fn {_k, v} -> Map.has_key?(v, "schema") end)
   end
-  defp resp_needs_validation(_), do: false
+  defp code_needs_validation?(_), do: false
 
   @spec finalize(t, E.spec_map) :: t
   defp finalize(parser, spec = %{"operationId" => id}) do
     call = AST.generate_call(id, parser.vars)
+    |> maybe_validate_response(id, spec)
+
     spec
     |> success_code
     |> case do
@@ -274,14 +264,33 @@ defmodule Exaggerate.Router do
           {:ok, code, response} <- unquote(call)
         end)
       _ ->
-        push_guard(parser, quote do
+        parser
+        |> push_guard(quote do
           {:ok, response} <- unquote(call)
+        end)
+        |> push_else(quote do
+          {:ok, code, response} ->
+            Responses.send_formatted(var!(conn), code, response)
         end)
     end
     |> push_else(quote do
       {:error, ecode, response} ->
         Responses.send_formatted(var!(conn), ecode, response)
     end)
+  end
+
+  defp maybe_validate_response(stmt, id, spec) do
+    if resp_needs_validation?(spec) do
+      validation = [id, "response"]
+      |> Enum.join("_")
+      |> String.to_atom
+
+      quote do
+        @validator.unquote(validation)(unquote(stmt))
+      end
+    else
+      stmt
+    end
   end
 
   # PUSH FUNCTIONS

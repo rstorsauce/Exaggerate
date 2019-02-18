@@ -110,7 +110,6 @@ defmodule Exaggerate.Validator.Response do
         end
 
       true ->
-
         case_stmt = typemap
         |> Map.keys
         |> Enum.map(fn {idx, mimetype} ->
