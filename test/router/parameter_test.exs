@@ -17,6 +17,9 @@ defmodule ExaggerateTest.Router.ParameterTest do
              {:ok, response} <- @endpoint.user_endpoint(conn, user_id) do
           Responses.send_formatted(conn, 200, response)
         else
+          {:ok, code, response} ->
+            Responses.send_formatted(conn, code, response)
+
           {:error, ecode, response} ->
             Responses.send_formatted(conn, ecode, response)
         end
@@ -44,6 +47,9 @@ defmodule ExaggerateTest.Router.ParameterTest do
              {:ok, response} <- @endpoint.user_endpoint(conn, user_id) do
           Responses.send_formatted(conn, 200, response)
         else
+          {:ok, code, response} ->
+            Responses.send_formatted(conn, code, response)
+
           {:error, ecode, response} ->
             Responses.send_formatted(conn, ecode, response)
         end
@@ -73,6 +79,9 @@ defmodule ExaggerateTest.Router.ParameterTest do
              {:ok, response} <- @endpoint.user_endpoint(conn, car_id, driver_id) do
           Responses.send_formatted(conn, 200, response)
         else
+          {:ok, code, response} ->
+            Responses.send_formatted(conn, code, response)
+
           {:error, ecode, response} ->
             Responses.send_formatted(conn, ecode, response)
         end
@@ -109,6 +118,9 @@ defmodule ExaggerateTest.Router.ParameterTest do
              {:ok, response} <- @endpoint.user_endpoint(conn, status) do
           Responses.send_formatted(conn, 200, response)
         else
+          {:ok, code, response} ->
+            Responses.send_formatted(conn, code, response)
+
           {:error, ecode, response} ->
             Responses.send_formatted(conn, ecode, response)
         end
@@ -138,6 +150,9 @@ defmodule ExaggerateTest.Router.ParameterTest do
              {:ok, response} <- @endpoint.user_endpoint(conn, offset, limit) do
           Responses.send_formatted(conn, 200, response)
         else
+          {:ok, code, response} ->
+            Responses.send_formatted(conn, code, response)
+
           {:error, ecode, response} ->
             Responses.send_formatted(conn, ecode, response)
         end
@@ -174,6 +189,9 @@ defmodule ExaggerateTest.Router.ParameterTest do
              {:ok, response} <- @endpoint.user_endpoint(conn, status) do
           Responses.send_formatted(conn, 200, response)
         else
+          {:ok, code, response} ->
+            Responses.send_formatted(conn, code, response)
+
           {:error, ecode, response} ->
             Responses.send_formatted(conn, ecode, response)
         end
@@ -209,6 +227,9 @@ defmodule ExaggerateTest.Router.ParameterTest do
         else
           {:mismatch, {loc, val}} ->
             Responses.send_formatted(conn, 400, "invalid parameter value")
+
+          {:ok, code, response} ->
+            Responses.send_formatted(conn, code, response)
 
           {:error, ecode, response} ->
             Responses.send_formatted(conn, ecode, response)
@@ -247,6 +268,9 @@ defmodule ExaggerateTest.Router.ParameterTest do
              {:ok, response} <- @endpoint.user_endpoint(conn, x_request_id) do
           Responses.send_formatted(conn, 200, response)
         else
+          {:ok, code, response} ->
+            Responses.send_formatted(conn, code, response)
+
           {:error, ecode, response} ->
             Responses.send_formatted(conn, ecode, response)
         end
@@ -276,12 +300,15 @@ defmodule ExaggerateTest.Router.ParameterTest do
 
         with {:ok, debug} <- Tools.get_cookie(conn, "debug", :integer),
              {:ok, csrftoken} <- Tools.get_cookie(conn, "csrftoken", :string),
-             :ok <- @validator.user_endpoint_parameters_0(debug),
+             :ok <- @validator.user_endpoint_parameters_0(csrftoken),
              {:ok, response} <- @endpoint.user_endpoint(conn, debug, csrftoken) do
           Responses.send_formatted(conn, 200, response)
         else
           {:mismatch, {loc, val}} ->
             Responses.send_formatted(conn, 400, "invalid parameter value")
+
+          {:ok, code, response} ->
+            Responses.send_formatted(conn, code, response)
 
           {:error, ecode, response} ->
             Responses.send_formatted(conn, ecode, response)

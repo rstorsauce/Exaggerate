@@ -105,12 +105,14 @@ defmodule Exaggerate.Validator.Response do
 
         quote do
           def unquote(id_fn)(unquote(fn_match)) do
-            unquote(trampoline_fn)(resp)
+            with :ok <- unquote(trampoline_fn)(resp) do
+              unquote(fn_match)
+            end
           end
         end
 
       true ->
-        case_stmt = typemap
+        trampoline_case_stmt = typemap
         |> Map.keys
         |> Enum.map(fn {idx, mimetype} ->
           trampoline_fn = [id, inspect(code), inspect(idx)]
@@ -122,6 +124,15 @@ defmodule Exaggerate.Validator.Response do
         end)
         |> AST.generate_piped_case
 
+        response_case_stmt = AST.generate_piped_case([
+          quote do
+            :ok -> {:ok, unquote(code), resp}
+          end,
+          quote do
+            any -> any
+          end
+        ])
+
         quote do
           def root_response(unquote(fn_match)) do
             resp
@@ -132,7 +143,8 @@ defmodule Exaggerate.Validator.Response do
               _ ->
                 {"application/json", resp}
             end
-            |> unquote(case_stmt)
+            |> unquote(trampoline_case_stmt)
+            |> unquote(response_case_stmt)
           end
         end
     end
@@ -146,7 +158,9 @@ defmodule Exaggerate.Validator.Response do
 
     quote do
       def unquote(id_fn)({:ok, resp}) do
-        unquote(id_fn)({:ok, unquote(code), resp})
+        with :ok <- unquote(id_fn)({:ok, unquote(code), resp}) do
+          {:ok, resp}
+        end
       end
     end
   end
@@ -233,8 +247,8 @@ defmodule Exaggerate.Validator.Response do
     id_atom = String.to_atom(id)
 
     quote do
-      def unquote(id_atom)(_) do
-        :ok
+      def unquote(id_atom)(any) do
+        any
       end
     end
   end

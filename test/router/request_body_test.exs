@@ -22,6 +22,9 @@ defmodule ExaggerateTest.Router.RequestBodyTest do
           {:error, :mimetype} ->
             Responses.send_formatted(conn, 400, "invalid request Content-Type")
 
+          {:ok, code, response} ->
+            Responses.send_formatted(conn, code, response)
+
           {:error, ecode, response} ->
             Responses.send_formatted(conn, ecode, response)
         end
@@ -62,6 +65,9 @@ defmodule ExaggerateTest.Router.RequestBodyTest do
         else
           {:error, :mimetype} ->
             Responses.send_formatted(conn, 400, "invalid request Content-Type")
+
+          {:ok, code, response} ->
+            Responses.send_formatted(conn, code, response)
 
           {:error, ecode, response} ->
             Responses.send_formatted(conn, ecode, response)

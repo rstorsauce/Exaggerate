@@ -15,6 +15,9 @@ defmodule ExaggerateTest.Router.RouterTest do
         with {:ok, response} <- @endpoint.test_endpoint(conn) do
           Responses.send_formatted(conn, 200, response)
         else
+          {:ok, code, response} ->
+            Responses.send_formatted(conn, code, response)
+
           {:error, ecode, response} ->
             Responses.send_formatted(conn, ecode, response)
         end
@@ -33,6 +36,9 @@ defmodule ExaggerateTest.Router.RouterTest do
         with {:ok, response} <- @endpoint.test_endpoint(conn) do
           Responses.send_formatted(conn, 200, response)
         else
+          {:ok, code, response} ->
+            Responses.send_formatted(conn, code, response)
+
           {:error, ecode, response} ->
             Responses.send_formatted(conn, ecode, response)
         end

@@ -31,15 +31,19 @@ defmodule ExaggerateTest.Validator.ResponseTest do
       router_res = """
       if Mix.env() in [:dev, :test] do
         def root_response({:ok, resp}) do
-          root_response({:ok, 200, resp})
+          with :ok <- root_response({:ok, 200, resp}) do
+            {:ok, resp}
+          end
         end
 
         def root_response({:ok, 200, resp}) do
-          root_response_200_0(resp)
+          with :ok <- root_response_200_0(resp) do
+            {:ok, 200, resp}
+          end
         end
 
-        def root_response(_) do
-          :ok
+        def root_response(any) do
+          any
         end
 
         defschema root_response_200_0: \"""
@@ -53,8 +57,8 @@ defmodule ExaggerateTest.Validator.ResponseTest do
                   }
                   \"""
       else
-        def root_response(_) do
-          :ok
+        def root_response(any) do
+          any
         end
       end
       """
@@ -92,15 +96,19 @@ defmodule ExaggerateTest.Validator.ResponseTest do
       router_res = """
       if Mix.env() in [:dev, :test] do
         def root_response({:ok, resp}) do
-          root_response({:ok, 201, resp})
+          with :ok <- root_response({:ok, 201, resp}) do
+            {:ok, resp}
+          end
         end
 
         def root_response({:ok, 201, resp}) do
-          root_response_201_0(resp)
+          with :ok <- root_response_201_0(resp) do
+            {:ok, 201, resp}
+          end
         end
 
-        def root_response(_) do
-          :ok
+        def root_response(any) do
+          any
         end
 
         defschema root_response_201_0: \"""
@@ -114,8 +122,8 @@ defmodule ExaggerateTest.Validator.ResponseTest do
                   }
                   \"""
       else
-        def root_response(_) do
-          :ok
+        def root_response(any) do
+          any
         end
       end
       """
@@ -155,11 +163,13 @@ defmodule ExaggerateTest.Validator.ResponseTest do
       router_res = """
       if Mix.env() in [:dev, :test] do
         def root_response({:error, 400, resp}) do
-          root_response_400_0(resp)
+          with :ok <- root_response_400_0(resp) do
+            {:error, 400, resp}
+          end
         end
 
-        def root_response(_) do
-          :ok
+        def root_response(any) do
+          any
         end
 
         defschema root_response_400_0: \"""
@@ -173,8 +183,8 @@ defmodule ExaggerateTest.Validator.ResponseTest do
                   }
                   \"""
       else
-        def root_response(_) do
-          :ok
+        def root_response(any) do
+          any
         end
       end
       """
@@ -211,11 +221,14 @@ defmodule ExaggerateTest.Validator.ResponseTest do
   """
 
   describe "response filter with multiple response type" do
+    @tag :one
     test "correctly creates a response macro" do
       router_res = """
       if Mix.env() in [:dev, :test] do
         def root_response({:ok, resp}) do
-          root_response({:ok, 200, resp})
+          with :ok <- root_response({:ok, 200, resp}) do
+            {:ok, resp}
+          end
         end
 
         def root_response({:ok, 200, resp}) do
@@ -234,10 +247,17 @@ defmodule ExaggerateTest.Validator.ResponseTest do
             {"image/jpeg", value} ->
               root_response_200_1(value)
           end
+          |> case do
+            :ok ->
+              {:ok, 200, resp}
+
+            any ->
+              any
+          end
         end
 
-        def root_response(_) do
-          :ok
+        def root_response(any) do
+          any
         end
 
         defschema root_response_200_0: \"""
@@ -253,8 +273,8 @@ defmodule ExaggerateTest.Validator.ResponseTest do
 
         defschema root_response_200_1: "true"
       else
-        def root_response(_) do
-          :ok
+        def root_response(any) do
+          any
         end
       end
       """
