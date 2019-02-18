@@ -127,6 +127,65 @@ defmodule ExaggerateTest.Validator.ResponseTest do
     end
   end
 
+
+  @error_type_route """
+  {
+    "operationId": "root",
+    "description": "gets by integer id",
+    "responses": {
+      "200": {"description": "pet response"},
+      "400": {
+        "description": "oops",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type":"object",
+              "properties":{
+                "foo":{"type": "string"}
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  """
+
+  describe "response filter with single error response type" do
+    test "correctly creates a response macro" do
+      router_res = """
+      if Mix.env() in [:dev, :test] do
+        def root_response({:error, 400, resp}) do
+          root_response_400_0(resp)
+        end
+
+        def root_response(_) do
+          :ok
+        end
+
+        defschema root_response_400_0: \"""
+                  {
+                    "properties": {
+                      "foo": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  }
+                  \"""
+      else
+        def root_response(_) do
+          :ok
+        end
+      end
+      """
+
+      assert router_res == {"/test", :post}
+      |> Validator.route(Jason.decode!(@error_type_route))
+      |> AST.to_string
+    end
+  end
+
   @multi_type_route """
   {
     "operationId": "root",

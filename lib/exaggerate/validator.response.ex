@@ -55,10 +55,11 @@ defmodule Exaggerate.Validator.Response do
   defp simplify_spec(specmap) do
     specmap
     |> Enum.map(&simplify_code_spec/1)
+    |> Enum.filter(&(&1))
     |> Enum.into(%{})
   end
 
-  @spec simplify_code_spec({String.t, E.spec_map}) :: {non_neg_integer, type_map}
+  @spec simplify_code_spec({String.t, E.spec_map}) :: {non_neg_integer, type_map} | nil
   defp simplify_code_spec({http_code, %{"content" => cmap}}) do
     simplified_map = cmap
     |> Enum.with_index
@@ -72,6 +73,7 @@ defmodule Exaggerate.Validator.Response do
 
     {String.to_integer(http_code), simplified_map}
   end
+  defp simplify_code_spec(_), do: nil
 
   #############################################################################
   ## trampolines work
