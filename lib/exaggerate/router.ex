@@ -55,6 +55,7 @@ defmodule Exaggerate.Router do
     |> build_body(spec)
     |> build_params(spec)
     |> validate_body(spec)
+    |> validate_params(spec)
     |> add_typecheck(spec)
     |> add_mimecheck(spec)
     |> finalize(spec)

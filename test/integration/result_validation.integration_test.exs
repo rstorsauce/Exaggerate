@@ -79,14 +79,13 @@ defmodule ExaggerateTest.ResultValidation.IntegrationTest do
       assert resp.body == ~s({"foo":"bar"})
     end
     test "a validation that doesn't match 500s" do
-      Agent.update(ResultValidator, fn _ -> "no match" end)
+      Agent.update(ResultValidator, fn _ -> "this is intended to error" end)
 
-      {:ok, resp} = BasicValidatedWeb.Endpoint.root(:conn)  |> IO.inspect(label: "85")
-      BasicValidatedWeb.Validator.root_response(resp) |> IO.inspect(label: "86")
-      BasicValidatedWeb.Validator.root_response_200_0(resp) |> IO.inspect(label: "88")
+      {:ok, resp} = BasicValidatedWeb.Endpoint.root(:conn)
+      BasicValidatedWeb.Validator.root_response(resp)
+      BasicValidatedWeb.Validator.root_response_200_0(resp)
 
       resp = HTTPoison.get!("http://localhost:#{@portmapper[:BasicValidatedWeb]}/")
-      resp |> IO.inspect(label: "84")
       assert resp.status_code == 500
     end
   end

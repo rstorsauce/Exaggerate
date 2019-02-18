@@ -300,7 +300,7 @@ defmodule ExaggerateTest.Router.ParameterTest do
 
         with {:ok, debug} <- Tools.get_cookie(conn, "debug", :integer),
              {:ok, csrftoken} <- Tools.get_cookie(conn, "csrftoken", :string),
-             :ok <- @validator.user_endpoint_parameters_0(csrftoken),
+             :ok <- @validator.user_endpoint_parameters_0(debug),
              {:ok, response} <- @endpoint.user_endpoint(conn, debug, csrftoken) do
           Responses.send_formatted(conn, 200, response)
         else
