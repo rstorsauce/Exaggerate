@@ -1,7 +1,7 @@
 defmodule ExaggerateTest.Router.IntegrationTest do
 
   use ExUnit.Case, async: true
-  import Exaggerate
+  import Exaggerate.Router
 
   # we're going to stand up a server here.
   alias Plug.Adapters.Cowboy

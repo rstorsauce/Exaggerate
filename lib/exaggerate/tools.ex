@@ -134,4 +134,10 @@ defmodule Exaggerate.Tools do
   defp validate_content(e = {:error, _, _}, _), do: e
   defp validate_content(%{"_json" => v}, _), do: {:ok, v}
   defp validate_content(v, _), do: {:ok, v}
+
+  def unpack_route({route, route_spec}, module) do
+    Enum.map(route_spec, fn {verb, ep_spec} ->
+      module.route({route, String.to_atom(verb)}, ep_spec)
+    end)
+  end
 end

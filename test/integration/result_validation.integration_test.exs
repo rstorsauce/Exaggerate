@@ -34,6 +34,8 @@ defmodule ExaggerateTest.ResultValidation.IntegrationTest do
 
   use ExUnit.Case
   import Exaggerate
+  import Exaggerate.Validator
+  import Exaggerate.Router
 
   #alias and require our repository of Schemata
   alias ExaggerateTest.ResultValidation.Schemata

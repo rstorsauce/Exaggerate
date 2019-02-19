@@ -6,6 +6,7 @@ defmodule Exaggerate.Validator do
 
   alias Exaggerate, as: E
   alias Exaggerate.AST
+  alias Exaggerate.Tools
 
   @spec route(E.route, E.spec_map) :: Macro.t
   def route({_path, _verb}, spec = %{"operationId" => id}) do
@@ -107,6 +108,49 @@ defmodule Exaggerate.Validator do
           end
         end
         unquote(schema)
+      end
+    end
+  end
+
+  @doc """
+  generates a validation module as a submodule of the current module.
+
+      defmodule Module do
+        validator my_scheme: ~s(<json-string>)
+      end
+
+  creates the following module:
+
+      defmodule Module.MySchemeWeb.Validator do
+        ...
+        <validation code>
+        ...
+      end
+
+  Mostly useful for testing.  Note that the main module does NOT use this function
+  but calls module() instead.
+  """
+  defmacro validator(modulename, spec_json) do
+    # takes some swagger text and expands it so that the current
+    # module is a desired router.
+
+    validations = spec_json
+    |> Macro.expand(__CALLER__)
+    |> Jason.decode!
+    |> Map.get("paths")
+    |> Enum.flat_map(&Tools.unpack_route(&1, Exaggerate.Validator))
+
+    rootpath = __CALLER__.module |> Module.split
+
+    validator = Module.concat(rootpath ++ [Macro.camelize(modulename <> "_web"), Validator])
+
+    quote do
+      defmodule unquote(validator) do
+
+        import Exonerate
+        import Exaggerate
+
+        unquote_splicing(validations)
       end
     end
   end

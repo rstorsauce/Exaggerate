@@ -5,7 +5,6 @@ defmodule ExaggerateTest.Router.ResponseValidationTest do
   alias Exaggerate.AST
 
   describe "testing tested-endpoint generating defs" do
-    @tag :one
     test "simplest router" do
       blockcode_res = """
       get "/test" do

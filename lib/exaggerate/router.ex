@@ -420,4 +420,44 @@ defmodule Exaggerate.Router do
   defp needs_mimecheck?(%{"requestBody" => _}), do: true
   defp needs_mimecheck?(_), do: false
 
+  defmacro router(modulename, spec_json) do
+    # takes some swagger text and expands it so that the current
+    # module is a desired router.
+
+    routes = spec_json
+    |> Macro.expand(__CALLER__)
+    |> Jason.decode!
+    |> Map.get("paths")
+    |> Enum.flat_map(&Exaggerate.Tools.unpack_route(&1, Exaggerate.Router))
+
+    rootpath = __CALLER__.module |> Module.split
+
+    router = Module.concat(rootpath ++ [Macro.camelize(modulename <> "_web"), :Router])
+    endpoint = Module.concat(rootpath ++ [Macro.camelize(modulename <> "_web"), :Endpoint])
+    validator = Module.concat(rootpath ++ [Macro.camelize(modulename <> "_web"), :Validator])
+
+    quote do
+      defmodule unquote(router) do
+        use Plug.Router
+
+        alias Exaggerate.Tools
+        alias Exaggerate.Responses
+
+        @endpoint unquote(endpoint)
+        @validator unquote(validator)
+
+        plug :match
+
+        plug Plug.Parsers,
+          parsers: [:urlencoded, :json, :multipart],
+          pass: ["*/*"],
+          json_decoder: Jason
+
+        plug :dispatch
+
+        unquote_splicing(routes)
+      end
+    end
+  end
+
 end

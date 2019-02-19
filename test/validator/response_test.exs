@@ -221,7 +221,6 @@ defmodule ExaggerateTest.Validator.ResponseTest do
   """
 
   describe "response filter with multiple response type" do
-    @tag :one
     test "correctly creates a response macro" do
       router_res = """
       if Mix.env() in [:dev, :test] do
