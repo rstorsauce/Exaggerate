@@ -4,6 +4,7 @@ defmodule Mix.Tasks.Swagger.Gen do
   alias Exaggerate.AST
   alias Exaggerate.Router
   alias Exaggerate.Tools
+  alias Exaggerate.Validator
 
   @shortdoc "generates an api from the supplied swaggerfile(s)"
   def run(params) do
@@ -37,14 +38,25 @@ defmodule Mix.Tasks.Swagger.Gen do
     ])
     File.mkdir_p(module_dir)
 
-    # build the endpoint file:
-    module_code = (appname <> "." <> basename <> "_web")
-    |> Tools.camelize
+    # create the module base:
+    module_base = Tools.camelize(appname <> "." <> basename <> "_web")
+
+    # build the router file:
+    router_code = module_base
     |> Router.module(spec_map, swaggerfile)
     |> AST.to_string
 
     module_dir
     |> Path.join("router.ex")
-    |> File.write!(module_code)
+    |> File.write!(router_code)
+
+    # build the validator file:
+    validator_code = module_base
+    |> Validator.module(spec_map, swaggerfile)
+    |> AST.to_string
+
+    module_dir
+    |> Path.join("validator.ex")
+    |> File.write!(validator_code)
   end
 end
