@@ -1,8 +1,9 @@
 defmodule Mix.Tasks.Swagger.Gen do
   use Mix.Task
 
-  alias Exaggerate.Endpoint
   alias Exaggerate.AST
+  alias Exaggerate.Router
+  alias Exaggerate.Tools
 
   @shortdoc "generates an api from the supplied swaggerfile(s)"
   def run(params) do
@@ -29,18 +30,21 @@ defmodule Mix.Tasks.Swagger.Gen do
 
     # create the module path
     module_dir = Path.join([
-      File.cwd!, appname,
+      File.cwd!,
+      "lib",
+      appname,
       basename <> "_web"
     ])
     File.mkdir_p(module_dir)
 
     # build the endpoint file:
-    module_code = (appname <> "." <> basename)
-    |> Endpoint.module(spec_map)
+    module_code = (appname <> "." <> basename <> "_web")
+    |> Tools.camelize
+    |> Router.module(spec_map, swaggerfile)
     |> AST.to_string
 
     module_dir
-    |> Path.join("endpoint.ex")
+    |> Path.join("router.ex")
     |> File.write!(module_code)
   end
 end

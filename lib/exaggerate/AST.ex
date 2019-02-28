@@ -57,6 +57,10 @@ defmodule Exaggerate.AST do
   def ast_to_string({:@, _, [{:comment, _, comment}]}, _) do
     "# #{comment}"
   end
+  # trap @blankline bits and inject a blank line.
+  def ast_to_string({:@, _, [{:blankline, _, _}]}, _) do
+    "\n\n"
+  end
   # trap sigil_s using the parenthesis mode do
   def ast_to_string({:sigil_s, _, [{:<<>>, _, [string]} | _]}, _) do
     trimmed = String.trim(string)
@@ -158,6 +162,7 @@ defmodule Exaggerate.AST do
 
   @spec comment?(Macro.t)::boolean
   defp comment?({:@, _, [{:comment, _, _}]}), do: true
+  defp comment?({:@, _, [{:blankline,_ ,_}]}), do: true
   defp comment?(_val), do: false
 
   @spec ensigil(String.t) :: Macro.t

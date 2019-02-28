@@ -110,6 +110,6 @@ defmodule Exaggerate.Responses do
   end
   def error_out(s = %Plug.Conn{state: :sent}), do: s
   def error_out(conn) do
-    Responses.send_formatted(conn, 406, "accept error")
+    send_formatted(conn, 406, "accept error")
   end
 end
