@@ -420,21 +420,16 @@ defmodule Exaggerate.Router do
   defp needs_mimecheck?(%{"requestBody" => _}), do: true
   defp needs_mimecheck?(_), do: false
 
-  defmacro router(modulename, spec_json) do
-    # takes some swagger text and expands it so that the current
-    # module is a desired router.
+  @spec module(atom, E.spec_map) :: Macro.t
+  def module(moduleroot, spec) do
 
-    routes = spec_json
-    |> Macro.expand(__CALLER__)
-    |> Jason.decode!
+    routes = spec
     |> Map.get("paths")
     |> Enum.flat_map(&Exaggerate.Tools.unpack_route(&1, Exaggerate.Router))
 
-    rootpath = __CALLER__.module |> Module.split
-
-    router = Module.concat(rootpath ++ [Macro.camelize(modulename <> "_web"), :Router])
-    endpoint = Module.concat(rootpath ++ [Macro.camelize(modulename <> "_web"), :Endpoint])
-    validator = Module.concat(rootpath ++ [Macro.camelize(modulename <> "_web"), :Validator])
+    router = Module.concat(moduleroot, :Router)
+    endpoint = Module.concat(moduleroot, :Endpoint)
+    validator = Module.concat(moduleroot, :Validator)
 
     quote do
       defmodule unquote(router) do
@@ -458,6 +453,37 @@ defmodule Exaggerate.Router do
         unquote_splicing(routes)
       end
     end
+  end
+
+  @doc """
+  generates a router module as a submodule of the current module.
+
+      defmodule Module do
+        router my_schema: ~s(<json-string>)
+      end
+
+  creates the following module:
+
+      defmodule Module.MySchemaWeb.Router do
+        ...
+        <validation code>
+        ...
+      end
+
+  Mostly useful for testing.  Note that the main module does NOT use this function
+  but calls module() instead.
+  """
+  defmacro router(modulename, spec_json) do
+    # takes some swagger text and expands it so that the current
+    # module is a desired router.
+
+    spec_map = spec_json
+    |> Macro.expand(__CALLER__)
+    |> Jason.decode!
+
+    moduleroot = Module.concat(__CALLER__.module, Macro.camelize(modulename <> "_web"))
+
+    module(moduleroot, spec_map)
   end
 
 end

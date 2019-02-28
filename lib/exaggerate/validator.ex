@@ -112,6 +112,27 @@ defmodule Exaggerate.Validator do
     end
   end
 
+  @spec module(atom, E.spec_map) :: Macro.t
+  def module(moduleroot, spec) do
+
+    validations = spec
+    |> Map.get("paths")
+    |> Enum.flat_map(&Tools.unpack_route(&1, Exaggerate.Validator))
+
+    validator = Module.concat(moduleroot, :Validator)
+
+    quote do
+      defmodule unquote(validator) do
+
+        import Exonerate
+        import Exaggerate
+
+        unquote_splicing(validations)
+      end
+    end
+  end
+
+
   @doc """
   generates a validation module as a submodule of the current module.
 
@@ -137,22 +158,10 @@ defmodule Exaggerate.Validator do
     validations = spec_json
     |> Macro.expand(__CALLER__)
     |> Jason.decode!
-    |> Map.get("paths")
-    |> Enum.flat_map(&Tools.unpack_route(&1, Exaggerate.Validator))
 
-    rootpath = __CALLER__.module |> Module.split
+    moduleroot = Module.concat(__CALLER__.module, Macro.camelize(modulename <> "_web"))
 
-    validator = Module.concat(rootpath ++ [Macro.camelize(modulename <> "_web"), Validator])
-
-    quote do
-      defmodule unquote(validator) do
-
-        import Exonerate
-        import Exaggerate
-
-        unquote_splicing(validations)
-      end
-    end
+    module(moduleroot, validations)
   end
 
 end

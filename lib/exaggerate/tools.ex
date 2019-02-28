@@ -1,7 +1,27 @@
 defmodule Exaggerate.Tools do
 
-  alias Plug.Conn
   @type error :: {:error, integer, String.t}
+
+  @spec camelize(String.t)::String.t
+  @doc """
+  camelizes macro name strings from snake_case, but respects period
+  boundaries.
+
+  iex> Exaggerate.Tools.camelize("basic")
+  "Basic"
+
+  iex> Exaggerate.Tools.camelize("basic_snake")
+  "BasicSnake"
+
+  iex> Exaggerate.Tools.camelize("basic.with_dot")
+  "Basic.WithDot"
+  """
+  def camelize(macrospec) do
+    macrospec
+    |> String.split(".")
+    |> Enum.map(&Macro.camelize/1)
+    |> Enum.join(".")
+  end
 
   @spec get_path(Plug.Conn.t, String.t, :string) :: {:ok, String.t}
   @spec get_path(Plug.Conn.t, String.t, :integer) :: {:ok, integer} | error

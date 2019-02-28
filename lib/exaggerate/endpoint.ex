@@ -11,6 +11,7 @@ defmodule Exaggerate.Endpoint do
   }
 
   alias Exaggerate.AST
+  alias Exaggerate.Tools
 
   @type endpointmap :: %{required(atom) => list(atom)}
 
@@ -29,7 +30,7 @@ defmodule Exaggerate.Endpoint do
     code = Enum.map(endpoints, &block/1)
 
     module = (module_name <> "_web")
-    |> Macro.camelize
+    |> Tools.camelize
     |> Module.concat(Endpoint)
 
     quote do
