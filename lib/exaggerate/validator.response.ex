@@ -26,15 +26,17 @@ defmodule Exaggerate.Validator.Response do
 
     # the swagger spec has a very complicated scheme for determining which
     # jsonschemata apply in the context of specs.  Let's simplify that a bit
-    # and in the process omit all branches that need to be checked.
+    # and in the process omit all branches that don't need to be checked.
 
-    simple_spec = simplify_spec(spec_map)
+    simple_spec = simplify_spec(spec_map) |> IO.inspect(label: "ABCD")
 
-    %__MODULE__{}
-    |> add_trampolines(resp_id, simple_spec)
-    |> add_final_trampoline(resp_id)
-    |> add_schemata(resp_id, simple_spec)
-    |> finalize(resp_id)
+    unless (simple_spec == %{}) do
+      %__MODULE__{}
+      |> add_trampolines(resp_id, simple_spec)
+      |> add_final_trampoline(resp_id)
+      |> add_schemata(resp_id, simple_spec)
+      |> finalize(resp_id)
+    end
   end
 
   #############################################################################

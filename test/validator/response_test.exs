@@ -4,6 +4,26 @@ defmodule ExaggerateTest.Validator.ResponseTest do
   alias Exaggerate.Validator
   alias Exaggerate.AST
 
+  @blank_route """
+  {
+    "operationId": "root",
+    "description": "gets by integer id",
+    "responses": {
+      "200": {"description": "pet response"}
+    }
+  }
+  """
+  describe "blank response filter" do
+    test "correctly creates no response macro" do
+      router_res = ""
+
+      assert router_res == {"/test", :post}
+      |> Validator.route(Jason.decode!(@blank_route))
+      |> AST.to_string
+    end
+  end
+
+
   @basic_route """
   {
     "operationId": "root",
