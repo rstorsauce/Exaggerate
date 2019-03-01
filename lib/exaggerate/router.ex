@@ -129,10 +129,8 @@ defmodule Exaggerate.Router do
       {:ok, unquote(name_ast)} <- Tools.unquote(fetch_fn)(var!(conn), unquote(fetch_name))
     end)
   end
-  defp build_param(%{"in" => location,
-                     "required" => false,
-                     "name" => name,
-                     "schema" => schema}, parser) do
+  defp build_param(%{"in" => _location,
+                     "required" => false}, parser) do
     parser
   end
   defp build_param(_, parser) do
