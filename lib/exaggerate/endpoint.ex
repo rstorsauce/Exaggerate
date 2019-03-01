@@ -34,7 +34,7 @@ defmodule Exaggerate.Endpoint do
     |> Enum.into(%{})
   end
   defp ep_struct_from_path({_, routes}) do
-    Enum.flat_map(routes, &ep_struct_from_route/1)
+    Enum.map(routes, &ep_struct_from_route/1)
   end
   defp ep_struct_from_route({_, routemap = %{"operationId" => oid}}) do
     params = ep_params(routemap)
@@ -76,12 +76,8 @@ defmodule Exaggerate.Endpoint do
   the existing functions first.
   """
   @spec module_from_ep_map(String.t, endpointmap, Path.t) :: Macro.t
-  def module_from_ep_map(module_name, endpoints, filename) do
+  def module_from_ep_map(module, endpoints, filename) do
     code = Enum.map(endpoints, &block/1)
-
-    module = (module_name <> "_web")
-    |> Tools.camelize
-    |> Module.concat(Endpoint)
 
     quote do
       @comment ""

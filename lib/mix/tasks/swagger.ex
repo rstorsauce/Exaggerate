@@ -2,6 +2,7 @@ defmodule Mix.Tasks.Swagger.Gen do
   use Mix.Task
 
   alias Exaggerate.AST
+  alias Exaggerate.Endpoint
   alias Exaggerate.Router
   alias Exaggerate.Tools
   alias Exaggerate.Validator
@@ -49,6 +50,15 @@ defmodule Mix.Tasks.Swagger.Gen do
     module_dir
     |> Path.join("router.ex")
     |> File.write!(router_code)
+
+    # build the endpoint file:
+    endpoint_code = module_base
+    |> Endpoint.module(spec_map, swaggerfile)
+    |> AST.to_string
+
+    module_dir
+    |> Path.join("endpoint.ex")
+    |> File.write!(endpoint_code)
 
     # build the validator file:
     validator_code = module_base

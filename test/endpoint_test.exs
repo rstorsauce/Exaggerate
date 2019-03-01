@@ -94,13 +94,13 @@ defmodule ExaggerateTest.EndpointTest do
 
   describe "testing endpoint generating modules" do
     test "endpoint module works with one def in the module" do
-      assert @one_def_module == "module_test"
+      assert @one_def_module == ModuleTestWeb.Endpoint
       |> Endpoint.module_from_ep_map(%{testblock1: %Endpoint{params: []}}, "test.json")
       |> AST.to_string
     end
 
     test "endpoint module works with two defs in the module" do
-      assert @two_def_module == "module_test"
+      assert @two_def_module == ModuleTestWeb.Endpoint
       |> Endpoint.module_from_ep_map(
         %{testblock1: %Endpoint{params: []},
           testblock2: %Endpoint{params: [:param]}}, "test.json")
