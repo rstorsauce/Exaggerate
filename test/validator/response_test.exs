@@ -15,11 +15,8 @@ defmodule ExaggerateTest.Validator.ResponseTest do
   """
   describe "blank response filter" do
     test "correctly creates no response macro" do
-      router_res = ""
-
-      assert router_res == {"/test", :post}
+      assert {:__block__, [], [nil]} == {"/test", :post}
       |> Validator.route(Jason.decode!(@blank_route))
-      |> AST.to_string
     end
   end
 

@@ -28,7 +28,7 @@ defmodule Exaggerate.Validator.Response do
     # jsonschemata apply in the context of specs.  Let's simplify that a bit
     # and in the process omit all branches that don't need to be checked.
 
-    simple_spec = simplify_spec(spec_map) |> IO.inspect(label: "ABCD")
+    simple_spec = simplify_spec(spec_map)
 
     unless (simple_spec == %{}) do
       %__MODULE__{}

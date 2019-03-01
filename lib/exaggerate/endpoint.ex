@@ -25,8 +25,8 @@ defmodule Exaggerate.Endpoint do
   called by `mix swagger` but not `mix swagger update`, which will parse out
   the existing functions first.
   """
-  @spec module(String.t, endpointmap) :: AST.block
-  def module(module_name, endpoints) do
+  @spec module_from_ep_map(String.t, endpointmap) :: AST.block
+  def module_from_ep_map(module_name, endpoints) do
     code = Enum.map(endpoints, &block/1)
 
     module = (module_name <> "_web")
