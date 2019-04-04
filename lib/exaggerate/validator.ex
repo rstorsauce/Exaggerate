@@ -127,6 +127,8 @@ defmodule Exaggerate.Validator do
     if validations == [{:__block__, [], [nil]}] do
       quote do
         defmodule unquote(validator) do
+          @moduledoc false
+
           @comment ""
           @comment "      --WARNING--"
           @comment ""
@@ -141,6 +143,7 @@ defmodule Exaggerate.Validator do
     else
       quote do
         defmodule unquote(validator) do
+          @moduledoc false
 
           @comment ""
           @comment "      --WARNING--"
