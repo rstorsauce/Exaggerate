@@ -59,7 +59,8 @@ defmodule Mix.Tasks.Swagger.Update do
 
     # rebuild the router file:
     code = File.read!(router_file)
-    new_code = Updater.update_router(module_base, code, spec_map)
+    swaggertext = File.read!(swaggerfile)
+    new_code = Updater.update_router(module_base, code, swaggertext)
     File.write!(router_file, new_code)
 
     # rebuild the endpoint file:
