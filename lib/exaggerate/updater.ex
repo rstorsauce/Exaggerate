@@ -1,17 +1,37 @@
 defmodule Exaggerate.Updater do
 
   alias Exaggerate.AST
+  alias Exaggerate.Endpoint
   alias Exaggerate.Tools
 
   @spec update_router(String.t, String.t, String.t)::String.t
   def update_router(modulebase, code, json) do
-    code = [header(modulebase), preamble(code), routes(json), postamble(code)]
+    new_code = [header(modulebase), preamble(code), routes(json), postamble(code)]
     |> Enum.join("\n")
     |> Code.format_string!(locals_without_parens: [plug: :*])
     |> Enum.join
 
-    code <> "\n"
+    new_code <> "\n"
   end
+
+  @spec update_endpoint(String.t, String.t)::String.t
+  def update_endpoint(code, json) do
+
+    swagger_map = Jason.decode!(json)
+    existing_calls = find_calls(code)
+
+    new_code = swagger_map
+    |> list_endpoints
+    |> Enum.reject(&(&1 in existing_calls))
+    |> Enum.map(&String.to_atom/1)
+    |> Enum.map(&Endpoint.block(&1, %Endpoint{}))
+    |> Enum.map(&AST.to_string/1)
+    |> insert_into_ast(code)
+
+    new_code <> "\n"
+  end
+
+  def generate_code(x), do: x
 
   ##########################################################
   ## ROUTER FUNCTIONS
@@ -121,5 +141,42 @@ defmodule Exaggerate.Updater do
     |> Enum.flat_map(&Tools.unpack_route(&1, Exaggerate.Router))
     |> Enum.map(&AST.to_string/1)
     |> Enum.join("\n")
+  end
+
+  ##########################################################
+  ## ENDPOINT FUNCTIONS
+
+  @spec find_calls(String.t)::[String.t]
+  def find_calls(code) do
+    code
+    |> String.split("\n")
+    |> Enum.map(&String.trim/1)
+    |> Enum.filter(&String.starts_with?(&1, "def "))
+    |> Enum.flat_map(fn line ->
+      Regex.run(~r/def (\w[\w\d\_]*)/, line, capture: :all_but_first)
+    end)
+  end
+
+  @spec list_endpoints(Exaggerate.spec_map)::[String.t]
+  def list_endpoints(spec) do
+    spec
+    |> Map.get("paths")
+    |> Enum.flat_map(&get_operations/1)
+  end
+
+  def get_operations({_, verb}) do
+    Enum.flat_map(verb, fn
+      {_k, %{"operationId" => op}} -> [op]
+      _ -> []
+    end)
+  end
+
+  def insert_into_ast(new_code, old_code) do
+    old_code
+    |> Code.format_string!
+    |> List.insert_at(-2, new_code)
+    |> Enum.join
+    |> Code.format_string!
+    |> Enum.join
   end
 end

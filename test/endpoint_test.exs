@@ -7,7 +7,7 @@ defmodule ExaggerateTest.EndpointTest do
   describe "testing endpoint generating defs" do
     test "endpoint block with no parameters works" do
       blockcode_res = """
-      def testblock(conn) do
+      def testblock(_conn) do
         # autogen function.
         # insert your code here, then delete
         # the next exception:
@@ -22,7 +22,7 @@ defmodule ExaggerateTest.EndpointTest do
 
     test "endpoint block with one parameter works" do
       blockcode_res = """
-      def testblock(conn, param1) do
+      def testblock(_conn, param1) do
         # autogen function.
         # insert your code here, then delete
         # the next exception:
@@ -37,7 +37,7 @@ defmodule ExaggerateTest.EndpointTest do
 
     test "endpoint block with two parameters works" do
       blockcode_res = """
-      def testblock(conn, param1, param2) do
+      def testblock(_conn, param1, param2) do
         # autogen function.
         # insert your code here, then delete
         # the next exception:
@@ -59,7 +59,7 @@ defmodule ExaggerateTest.EndpointTest do
   #
 
   defmodule ModuleTestWeb.Endpoint do
-    def testblock1(conn) do
+    def testblock1(_conn) do
       # autogen function.
       # insert your code here, then delete
       # the next exception:
@@ -76,14 +76,14 @@ defmodule ExaggerateTest.EndpointTest do
   #
 
   defmodule ModuleTestWeb.Endpoint do
-    def testblock1(conn) do
+    def testblock1(_conn) do
       # autogen function.
       # insert your code here, then delete
       # the next exception:
       raise "error: testblock1 not implemented"
     end
 
-    def testblock2(conn, param) do
+    def testblock2(_conn, param) do
       # autogen function.
       # insert your code here, then delete
       # the next exception:

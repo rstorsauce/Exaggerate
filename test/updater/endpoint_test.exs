@@ -70,12 +70,11 @@ defmodule ExaggerateTest.Updater.EndpointTest do
   #
 
   defmodule Test.TestWeb.Endpoint do
-
     @moduledoc false
 
     @some_things_here
 
-    @spec foo(Plug.conn) :: {:ok, map}
+    @spec foo(Plug.conn()) :: {:ok, map}
     def foo(_conn) do
       # we have implemented a foo method.
       {:ok, %{}}
@@ -85,32 +84,31 @@ defmodule ExaggerateTest.Updater.EndpointTest do
       # autogen function.
       # insert your code here, then delete
       # the next exception:
-
-      raise unquote(raise_str)
+      raise "error: bar not implemented"
     end
   end
   """
 
-  #describe "code analysis components work as expected" do
-  #  test "list endpoints" do
-  #    endpoints = @updated_routes
-  #    |> Jason.decode!
-  #    |> Exaggerate.Updater.list_endpoints
-#
-  #    assert ["bar", "foo"] == endpoints
-  #  end
-#
-  #  test "find calls" do
-  #    calls = Exaggerate.Updater.find_calls(@starting_code)
-  #    assert ["foo"] == calls
-  #  end
-  #end
-#
-  #test "an empty routes file is correctly updated" do
-  #  assert @finishing_code == Exaggerate.Updater.update_endpoint(@starting_code, @updated_routes)
-  #end
-#
-  #test "an updated routes file is untouched" do
-  #  assert @finishing_code == Exaggerate.Updater.update_endpoint(@finishing_code, @updated_routes)
-  #end
+  describe "code analysis components work as expected" do
+    test "list endpoints" do
+      endpoints = @updated_routes
+      |> Jason.decode!
+      |> Exaggerate.Updater.list_endpoints
+
+      assert ["bar", "foo"] == endpoints
+    end
+
+    test "find calls" do
+      calls = Exaggerate.Updater.find_calls(@starting_code)
+      assert ["foo"] == calls
+    end
+  end
+
+  test "an empty routes file is correctly updated" do
+    assert @finishing_code == Exaggerate.Updater.update_endpoint(@starting_code, @updated_routes)
+  end
+
+  test "an updated routes file is untouched" do
+    assert @finishing_code == Exaggerate.Updater.update_endpoint(@finishing_code, @updated_routes)
+  end
 end

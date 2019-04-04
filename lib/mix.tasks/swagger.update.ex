@@ -64,7 +64,9 @@ defmodule Mix.Tasks.Swagger.Update do
     File.write!(router_file, new_code)
 
     # rebuild the endpoint file:
-    Endpoint.update(router_file, spec_map)
+    endpoint_code = File.read!(endpoint_file)
+    new_endpoint_code = Updater.update_endpoint(endpoint_code, swaggertext)
+    File.write!(endpoint_file, new_endpoint_code)
 
     # rebuild the validator file wholesale:
     validator_code = module_base

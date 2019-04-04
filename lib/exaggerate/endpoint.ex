@@ -109,7 +109,7 @@ defmodule Exaggerate.Endpoint do
     raise_str = "error: #{endpoint} not implemented"
     mvars = Enum.map(vars, fn var -> {var, [], Elixir} end)
     quote do
-      def unquote(endpoint)(conn, unquote_splicing(mvars)) do
+      def unquote(endpoint)(_conn, unquote_splicing(mvars)) do
         @comment "autogen function."
         @comment "insert your code here, then delete"
         @comment "the next exception:"
