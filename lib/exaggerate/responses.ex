@@ -76,12 +76,13 @@ defmodule Exaggerate.Responses do
 
   def try_json(s = %Plug.Conn{state: :sent}, _, _), do: s
   def try_json(conn, code, content) when code >= 400 and code <= 499 do
-    try_with_mimetype(conn, code, """
-      {
-        "error": #{code},
-        "message": #{content}
-      }
-      """, "application/json")
+    extra_content = if is_map(content), do: content, else: %{}
+
+    resp = %{error: code, message: content}
+    |> Map.merge(extra_content)
+    |> Jason.encode!()
+
+    try_with_mimetype(conn, code, resp, "application/json")
   end
   def try_json(conn, code, content) when is_binary(content) do
     try_with_mimetype(conn, code, "\"content\"", "application/json")
